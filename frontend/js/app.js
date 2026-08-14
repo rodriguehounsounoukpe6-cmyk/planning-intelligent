@@ -23,7 +23,7 @@ class App {
         document.getElementById('btnAjouterCours').addEventListener('click', () => this.ajouterCours());
         document.getElementById('btnAjouterTache').addEventListener('click', () => this.ajouterTache());
         document.getElementById('btnCharger').addEventListener('click', () => this.chargerDonnees());
-        document.getElementById('btnNouvelUtilisateur').addEventListener('click', () => this.creerUtilisateur());
+        // ✅ SUPPRIMÉ : btnNouvelUtilisateur n'existe plus dans le HTML
         document.getElementById('btnPDF').addEventListener('click', () => this.genererPDF());
 
         document.getElementById('userId').addEventListener('keypress', (e) => {
@@ -35,6 +35,7 @@ class App {
     // GESTION DES UTILISATEURS
     // ==========================================
 
+    // ✅ Méthode conservée mais plus utilisée (peut être supprimée si souhaité)
     async creerUtilisateur() {
         const nom = prompt("👤 Entrez votre nom :", "Étudiant") || "Étudiant";
         const classe = prompt("📚 Entrez votre classe :", "Terminale") || "Non spécifié";
@@ -66,7 +67,6 @@ class App {
             '<p style="text-align:center;color:#666;">⏳ Chargement en cours...</p>';
         
         try {
-            // ✅ Utiliser ApiClient (qui utilise window.API_BASE)
             const stats = await ApiClient.getStats(userId);
             if (stats.success) {
                 this.afficherStats(stats.stats);
@@ -317,7 +317,6 @@ class App {
             btnPDF.textContent = '⏳ Génération...';
             btnPDF.disabled = true;
 
-            // ✅ Utiliser window.API_BASE
             const response = await fetch(`${window.API_BASE}/pdf/generer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
