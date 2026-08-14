@@ -316,6 +316,9 @@
         <div id="notification" style="margin-top:20px; padding:15px; border-radius:10px; display:none; text-align:center; font-weight:500;"></div>
     </div>
 
+    <!-- ✅ AJOUT : Charger api.js pour définir window.API_BASE -->
+    <script src="js/api.js"></script>
+
     <script>
         let semaineOffset = 0;
         let utilisateurId = localStorage.getItem('userId') || '';
@@ -377,13 +380,16 @@
             }
 
             try {
-                // ✅ Utiliser window.API_BASE
+                console.log(`📡 Chargement du planning pour: ${userId}`);
+                console.log(`🔗 URL: ${window.API_BASE}/optimisation/generer`);
+                
                 const response = await fetch(`${window.API_BASE}/optimisation/generer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ utilisateur_id: userId })
                 });
                 const data = await response.json();
+                console.log('📊 Planning reçu:', data);
 
                 if (!data.success || !data.plan || data.plan.length === 0) {
                     document.getElementById('planningContainer').innerHTML = `
@@ -442,6 +448,7 @@
                 document.getElementById('planningContainer').innerHTML = html;
 
             } catch (error) {
+                console.error('❌ Erreur chargement planning:', error);
                 document.getElementById('planningContainer').innerHTML = `
                     <div class="empty-planning">
                         <span class="emoji">❌</span>
@@ -475,7 +482,8 @@
                 btn.textContent = '⏳ Génération...';
                 btn.disabled = true;
 
-                // ✅ Utiliser window.API_BASE
+                console.log(`📡 Téléchargement PDF pour: ${userId}`);
+                
                 const response = await fetch(`${window.API_BASE}/pdf/generer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -484,9 +492,10 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // ✅ URL dynamique
+                    const pdfUrl = `${window.API_BASE.replace('/api', '')}${data.pdf.url}`;
+                    console.log(`📄 PDF URL: ${pdfUrl}`);
                     const link = document.createElement('a');
-                    link.href = `${window.API_BASE.replace('/api', '')}${data.pdf.url}`;
+                    link.href = pdfUrl;
                     link.download = data.pdf.filename;
                     document.body.appendChild(link);
                     link.click();
@@ -499,6 +508,7 @@
                 btn.textContent = '📄 PDF';
                 btn.disabled = false;
             } catch (error) {
+                console.error('❌ Erreur téléchargement PDF:', error);
                 afficherNotification('❌ Erreur: ' + error.message, 'error');
                 document.getElementById('btnPDF').textContent = '📄 PDF';
                 document.getElementById('btnPDF').disabled = false;

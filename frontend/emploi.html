@@ -277,6 +277,9 @@
         <div id="notification"></div>
     </div>
 
+    <!-- ✅ AJOUT : Charger api.js pour définir window.API_BASE -->
+    <script src="js/api.js"></script>
+    
     <script>
         let utilisateurId = localStorage.getItem('userId') || '';
         let coursActuels = [];
@@ -302,18 +305,29 @@
             localStorage.setItem('userId', userId);
 
             try {
-                // ✅ Utiliser window.API_BASE
+                console.log(`📡 Chargement des cours pour l'utilisateur: ${userId}`);
+                console.log(`🔗 URL: ${window.API_BASE}/emploi/${userId}`);
+                
                 const response = await fetch(`${window.API_BASE}/emploi/${userId}`);
                 const data = await response.json();
+                console.log('📚 Cours récupérés:', data);
+                
                 if (data.success) {
                     coursActuels = data.emplois || [];
                     const container = document.getElementById('emploiListContent');
+                    
                     if (coursActuels.length === 0) {
-                        container.innerHTML = `<div style="text-align:center;padding:30px;color:#b2bec3;"><span style="font-size:3em;display:block;margin-bottom:10px;">📖</span>Aucun cours enregistré</div>`;
+                        container.innerHTML = `
+                            <div style="text-align:center;padding:30px;color:#b2bec3;">
+                                <span style="font-size:3em;display:block;margin-bottom:10px;">📖</span>
+                                Aucun cours enregistré
+                            </div>
+                        `;
                     } else {
                         let html = '';
                         const jours = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
                         const joursFr = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+                        
                         for (let i = 0; i < jours.length; i++) {
                             const coursJour = coursActuels.filter(c => c.jour === jours[i]);
                             if (coursJour.length > 0) {
@@ -333,10 +347,14 @@
                         }
                         container.innerHTML = html;
                     }
+                    
                     document.getElementById('nbCoursEmploi').textContent = `${coursActuels.length} cours`;
-                    afficherNotification('✅ Emploi du temps chargé', 'success');
+                    afficherNotification(`✅ ${coursActuels.length} cours chargés`, 'success');
+                } else {
+                    afficherNotification('❌ Erreur: ' + data.message, 'error');
                 }
             } catch (error) {
+                console.error('❌ Erreur chargement:', error);
                 afficherNotification('❌ Erreur: ' + error.message, 'error');
             }
         }
@@ -347,34 +365,52 @@
                 afficherNotification('⚠️ Veuillez charger un utilisateur', 'warning');
                 return;
             }
+            
             const matiere = document.getElementById('matiere').value.trim();
             const jour = document.getElementById('jourCours').value;
             const heureDebut = parseInt(document.getElementById('heureDebut').value);
             const heureFin = parseInt(document.getElementById('heureFin').value);
+            
+            console.log('📝 Ajout cours:', { userId, matiere, jour, heureDebut, heureFin });
+            
             if (!matiere || !heureDebut || !heureFin) {
                 afficherNotification('⚠️ Remplissez tous les champs', 'warning');
                 return;
             }
+            
             if (heureDebut >= heureFin) {
                 afficherNotification('⚠️ Heure début avant heure fin', 'warning');
                 return;
             }
+            
             try {
-                // ✅ Utiliser window.API_BASE
                 const response = await fetch(`${window.API_BASE}/emploi/add`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ utilisateur_id: userId, jour, heure_debut: heureDebut, heure_fin: heureFin, matiere })
+                    body: JSON.stringify({
+                        utilisateur_id: userId,
+                        jour: jour,
+                        heure_debut: heureDebut,
+                        heure_fin: heureFin,
+                        matiere: matiere,
+                        priorite: 3
+                    })
                 });
+                
                 const data = await response.json();
+                console.log('📝 Réponse ajout:', data);
+                
                 if (data.success) {
                     afficherNotification('✅ Cours ajouté !', 'success');
                     document.getElementById('matiere').value = '';
                     document.getElementById('heureDebut').value = '';
                     document.getElementById('heureFin').value = '';
                     await chargerCours();
+                } else {
+                    afficherNotification('❌ Erreur: ' + data.message, 'error');
                 }
             } catch (error) {
+                console.error('❌ Erreur ajout:', error);
                 afficherNotification('❌ Erreur: ' + error.message, 'error');
             }
         }
@@ -382,7 +418,6 @@
         async function supprimerCours(id) {
             if (!confirm('Supprimer ce cours ?')) return;
             try {
-                // ✅ Utiliser window.API_BASE
                 const response = await fetch(`${window.API_BASE}/emploi/${id}`, { method: 'DELETE' });
                 const data = await response.json();
                 if (data.success) {
@@ -401,7 +436,6 @@
                 return;
             }
             try {
-                // ✅ Utiliser window.API_BASE
                 const response = await fetch(`${window.API_BASE}/optimisation/generer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

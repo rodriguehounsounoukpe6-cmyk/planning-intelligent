@@ -401,6 +401,9 @@
         <div id="notification"></div>
     </div>
 
+    <!-- ✅ AJOUT : Charger api.js pour définir window.API_BASE -->
+    <script src="js/api.js"></script>
+
     <script>
         // ============================================
         // PAGE GESTION DES MATIÈRES
@@ -440,9 +443,11 @@
             localStorage.setItem('userId', userId);
 
             try {
-                // ✅ Utiliser window.API_BASE
+                console.log(`📡 Chargement des matières pour: ${userId}`);
                 const response = await fetch(`${window.API_BASE}/auth/user/${userId}`);
                 const data = await response.json();
+                console.log('📚 Matières récupérées:', data);
+                
                 if (data.success && data.utilisateur && data.utilisateur.matieres) {
                     matieres = data.utilisateur.matieres;
                 } else {
@@ -463,14 +468,15 @@
                 }
                 afficherListeMatieres();
                 document.getElementById('nbMatieres').textContent = `${matieres.length} matière${matieres.length > 1 ? 's' : ''}`;
+                afficherNotification(`✅ ${matieres.length} matière(s) chargée(s)`, 'success');
             } catch (error) {
+                console.error('❌ Erreur chargement matières:', error);
                 afficherNotification('❌ Erreur: ' + error.message, 'error');
             }
         }
 
         async function sauvegarderMatieres() {
             try {
-                // ✅ Utiliser window.API_BASE
                 await fetch(`${window.API_BASE}/auth/user/${utilisateurId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -565,7 +571,6 @@
                 return;
             }
             try {
-                // ✅ Utiliser window.API_BASE
                 const response = await fetch(`${window.API_BASE}/emploi/${userId}`);
                 const data = await response.json();
                 if (data.success && data.emplois) {
