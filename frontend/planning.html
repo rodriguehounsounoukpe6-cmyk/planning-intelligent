@@ -377,7 +377,8 @@
             }
 
             try {
-                const response = await fetch('http://localhost:3000/api/optimisation/generer', {
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/optimisation/generer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ utilisateur_id: userId })
@@ -474,7 +475,8 @@
                 btn.textContent = '⏳ Génération...';
                 btn.disabled = true;
 
-                const response = await fetch('http://localhost:3000/api/pdf/generer', {
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/pdf/generer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ utilisateur_id: userId })
@@ -482,8 +484,9 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    // ✅ URL dynamique
                     const link = document.createElement('a');
-                    link.href = `http://localhost:3000${data.pdf.url}`;
+                    link.href = `${window.API_BASE.replace('/api', '')}${data.pdf.url}`;
                     link.download = data.pdf.filename;
                     document.body.appendChild(link);
                     link.click();

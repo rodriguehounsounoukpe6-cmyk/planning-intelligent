@@ -302,7 +302,8 @@
             localStorage.setItem('userId', userId);
 
             try {
-                const response = await fetch(`http://localhost:3000/api/emploi/${userId}`);
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/emploi/${userId}`);
                 const data = await response.json();
                 if (data.success) {
                     coursActuels = data.emplois || [];
@@ -359,7 +360,8 @@
                 return;
             }
             try {
-                const response = await fetch('http://localhost:3000/api/emploi/add', {
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/emploi/add`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ utilisateur_id: userId, jour, heure_debut: heureDebut, heure_fin: heureFin, matiere })
@@ -380,7 +382,8 @@
         async function supprimerCours(id) {
             if (!confirm('Supprimer ce cours ?')) return;
             try {
-                const response = await fetch(`http://localhost:3000/api/emploi/${id}`, { method: 'DELETE' });
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/emploi/${id}`, { method: 'DELETE' });
                 const data = await response.json();
                 if (data.success) {
                     afficherNotification('✅ Cours supprimé', 'success');
@@ -398,7 +401,8 @@
                 return;
             }
             try {
-                const response = await fetch('http://localhost:3000/api/optimisation/generer', {
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/optimisation/generer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ utilisateur_id: userId })

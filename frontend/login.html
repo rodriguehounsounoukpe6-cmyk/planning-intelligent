@@ -105,6 +105,17 @@
             color: #b2bec3;
             font-size: 13px;
         }
+        @media (max-width: 768px) {
+            .login-container {
+                margin: 20px auto;
+                padding: 25px;
+                width: 95%;
+            }
+            .login-container input {
+                font-size: 16px;
+                padding: 14px 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -154,10 +165,10 @@
                 btn.textContent = '⏳ Connexion...';
                 btn.disabled = true;
 
+                // ✅ Utiliser window.API_BASE
                 const data = await ApiClient.login(email, password);
 
                 if (data.success) {
-                    // Stocker les données de l'utilisateur
                     localStorage.setItem('userId', data.utilisateur.id);
                     localStorage.setItem('userNom', data.utilisateur.nom);
                     localStorage.setItem('userEmail', data.utilisateur.email);
@@ -204,7 +215,6 @@
             }, 5000);
         }
 
-        // Si déjà connecté, rediriger vers le dashboard
         if (localStorage.getItem('userId')) {
             window.location.href = 'dashboard.html';
         }
