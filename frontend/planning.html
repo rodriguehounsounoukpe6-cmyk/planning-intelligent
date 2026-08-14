@@ -265,6 +265,13 @@
     </style>
 </head>
 <body>
+    <!-- 🔒 PROTECTION : Rediriger si non connecté -->
+    <script>
+        if (!localStorage.getItem('userId')) {
+            window.location.href = 'login.html';
+        }
+    </script>
+
     <div class="container">
         <!-- HEADER -->
         <div class="header">

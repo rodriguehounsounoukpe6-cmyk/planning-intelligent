@@ -214,6 +214,13 @@
     </style>
 </head>
 <body>
+    <!-- 🔒 PROTECTION : Rediriger si non connecté -->
+    <script>
+        if (!localStorage.getItem('userId')) {
+            window.location.href = 'login.html';
+        }
+    </script>
+
     <div class="container">
         <!-- HEADER -->
         <div class="header">
@@ -324,7 +331,6 @@
             localStorage.setItem('userId', userId);
 
             try {
-                // ✅ Utiliser window.API_BASE
                 const data = await ApiClient.getStats(userId);
                 if (data.success) {
                     const stats = data.stats;
@@ -352,7 +358,6 @@
             }
 
             try {
-                // ✅ Utiliser window.API_BASE
                 const data = await ApiClient.optimiser(userId);
                 if (data.success) {
                     afficherNotification('✅ Planning optimisé ! ' + (data.plan ? data.plan.length : 0) + ' tâches', 'success');
