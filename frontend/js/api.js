@@ -7,9 +7,9 @@ const getApiBase = () => {
     const hostname = window.location.hostname;
     const port = window.location.port || '3000';
     
-    // ✅ Si on est sur Render
-    if (hostname.includes('onrender.com')) {
-        return `https://${hostname}/api`;
+    // ✅ Si on est sur Render (FORCÉ)
+    if (hostname === 'planning-intelligent.onrender.com' || hostname.includes('onrender.com')) {
+        return 'https://planning-intelligent.onrender.com/api';
     }
     
     // ✅ Si on est sur localhost (ordinateur)
@@ -81,10 +81,10 @@ class ApiClient {
      * @param {object} preferences - Préférences de l'utilisateur
      * @returns {Promise} Données de l'utilisateur créé
      */
-    static async creerUtilisateur(nom, classe, preferences = {}) {
+    static async creerUtilisateur(nom, classe, email, password, serie, preferences = {}) {
         return this.request('/auth/register', {
             method: 'POST',
-            body: { nom, classe, preferences }
+            body: { nom, classe, email, password, serie, preferences }
         });
     }
 
