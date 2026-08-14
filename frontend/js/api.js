@@ -22,6 +22,7 @@ const getApiBase = () => {
 };
 
 const API_BASE = getApiBase();
+window.API_BASE = API_BASE;   // ✅ EXPOSE LA VARIABLE GLOBALEMENT
 
 console.log('📦 API Client chargé avec succès !');
 console.log(`🔗 API Base: ${API_BASE}`);

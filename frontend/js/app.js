@@ -302,7 +302,7 @@ class App {
     }
 
     // ==========================================
-    // ✅ GÉNÉRATION PDF AVEC TÉLÉCHARGEMENT DIRECT
+    // ✅ GÉNÉRATION PDF AVEC API_BASE DYNAMIQUE
     // ==========================================
 
     async genererPDF() {
@@ -318,7 +318,8 @@ class App {
             btnPDF.textContent = '⏳ Génération...';
             btnPDF.disabled = true;
 
-            const response = await fetch('http://localhost:3000/api/pdf/generer', {
+            // ✅ Utiliser window.API_BASE au lieu de localhost en dur
+            const response = await fetch(`${window.API_BASE}/pdf/generer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ utilisateur_id: userId })
@@ -328,7 +329,7 @@ class App {
 
             if (data.success) {
                 // ✅ TÉLÉCHARGEMENT DIRECT
-                const pdfUrl = `http://localhost:3000${data.pdf.url}`;
+                const pdfUrl = `${window.API_BASE.replace('/api', '')}${data.pdf.url}`;
                 
                 // Créer un lien de téléchargement
                 const link = document.createElement('a');
