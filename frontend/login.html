@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Connexion - Planning Intelligent</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .login-container {
+            max-width: 450px;
+            margin: 60px auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .login-container .logo {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        .login-container h1 {
+            color: #2d3436;
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+        .login-container .subtitle {
+            color: #636e72;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .login-container label {
+            display: block;
+            text-align: left;
+            font-size: 13px;
+            color: #636e72;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-top: 5px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        .login-container input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 25px;
+            transition: transform 0.2s;
+        }
+        .btn-login:hover {
+            transform: scale(1.02);
+        }
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .login-container .register-link {
+            margin-top: 20px;
+            color: #636e72;
+            font-size: 14px;
+        }
+        .login-container .register-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .login-container .register-link a:hover {
+            text-decoration: underline;
+        }
+        #notification {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            display: none;
+        }
+        .separator {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+        }
+        .separator::before, .separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #dfe6e9;
+        }
+        .separator span {
+            padding: 0 15px;
+            color: #b2bec3;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <div class="logo">📚</div>
+            <h1>Mon Planning Intelligent</h1>
+            <p class="subtitle">Connectez-vous pour accéder à votre planning</p>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <label>📧 Email</label>
+                <input type="email" id="email" placeholder="exemple@email.com" required>
+
+                <label>🔒 Mot de passe</label>
+                <input type="password" id="password" placeholder="Votre mot de passe" required>
+
+                <button type="submit" class="btn-login" id="btnLogin">🔐 Se connecter</button>
+            </form>
+
+            <div class="separator">
+                <span>ou</span>
+            </div>
+
+            <button class="btn" onclick="window.location.href='index.html'" style="background:#00b894; color:white; border:none; padding:12px; border-radius:10px; font-weight:600; cursor:pointer; width:100%;">
+                👤 Créer un compte
+            </button>
+
+            <div id="notification"></div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const btn = document.getElementById('btnLogin');
+
+            if (!email || !password) {
+                afficherNotification('⚠️ Veuillez remplir tous les champs', 'warning');
+                return;
+            }
+
+            try {
+                btn.textContent = '⏳ Connexion...';
+                btn.disabled = true;
+
+                const data = await ApiClient.login(email, password);
+
+                if (data.success) {
+                    // Stocker les données de l'utilisateur
+                    localStorage.setItem('userId', data.utilisateur.id);
+                    localStorage.setItem('userNom', data.utilisateur.nom);
+                    localStorage.setItem('userEmail', data.utilisateur.email);
+                    localStorage.setItem('userMatieres', JSON.stringify(data.utilisateur.matieres || []));
+
+                    afficherNotification('✅ Connexion réussie ! Redirection...', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1500);
+                } else {
+                    afficherNotification('❌ ' + data.message, 'error');
+                }
+
+                btn.textContent = '🔐 Se connecter';
+                btn.disabled = false;
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+                btn.textContent = '🔐 Se connecter';
+                btn.disabled = false;
+            }
+        }
+
+        function afficherNotification(message, type = 'info') {
+            const el = document.getElementById('notification');
+            el.textContent = message;
+            el.style.display = 'block';
+            const colors = {
+                success: '#d4edda',
+                warning: '#fff3cd',
+                error: '#f8d7da',
+                info: '#d1ecf1'
+            };
+            const textColors = {
+                success: '#155724',
+                warning: '#856404',
+                error: '#721c24',
+                info: '#0c5460'
+            };
+            el.style.backgroundColor = colors[type] || colors.info;
+            el.style.color = textColors[type] || textColors.info;
+            setTimeout(() => {
+                el.style.display = 'none';
+            }, 5000);
+        }
+
+        // Si déjà connecté, rediriger vers le dashboard
+        if (localStorage.getItem('userId')) {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>

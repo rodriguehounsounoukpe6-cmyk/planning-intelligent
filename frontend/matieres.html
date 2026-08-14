@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Mes Matières - Planning Intelligent</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            background: rgba(255,255,255,0.15);
+            padding: 10px 15px;
+            border-radius: 12px;
+        }
+        .nav-menu .btn {
+            padding: 8px 18px;
+            font-size: 13px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .nav-menu .btn:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateY(-2px);
+        }
+        .nav-menu .btn.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+        .btn-connexion {
+            background: #e74c3c;
+            border-color: #e74c3c;
+            color: white;
+        }
+        .btn-connexion:hover {
+            background: #c0392b;
+            border-color: #c0392b;
+        }
+
+        /* Hamburger */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 8px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            margin-left: auto;
+        }
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            margin: 3px 0;
+            border-radius: 3px;
+            transition: 0.3s;
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        .nav-menu {
+            transition: all 0.3s ease;
+        }
+        .nav-menu.open {
+            display: flex !important;
+        }
+
+        @media (min-width: 769px) {
+            .nav-menu {
+                display: flex !important;
+            }
+            .hamburger {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                width: 100%;
+                background: rgba(26, 26, 46, 0.95);
+                border-radius: 12px;
+                padding: 15px;
+                margin-top: 10px;
+                gap: 8px;
+            }
+            .nav-menu .btn {
+                width: 100%;
+                text-align: center;
+                padding: 14px 20px;
+                font-size: 15px;
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.1);
+            }
+            .matieres-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+
+        .matieres-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .matieres-list {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .matieres-list h3 {
+            margin-bottom: 15px;
+            color: #2d3436;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .matiere-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+        .matiere-item:hover {
+            background: #f0f3f8;
+            transform: translateX(5px);
+        }
+        .matiere-item .info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .matiere-item .info .nom {
+            font-weight: 500;
+        }
+        .matiere-item .info .niveau {
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 20px;
+            color: white;
+        }
+        .niveau-facile { background: #00b894; }
+        .niveau-moyen { background: #fdcb6e; color: #2d3436; }
+        .niveau-difficile { background: #ff6b6b; }
+
+        .matiere-item .temps {
+            color: #636e72;
+            font-size: 13px;
+        }
+        .matiere-item .delete-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 3px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .matiere-form {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .matiere-form label {
+            display: block;
+            font-size: 13px;
+            color: #636e72;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .matiere-form input, .matiere-form select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-top: 3px;
+        }
+        .matiere-form input:focus, .matiere-form select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .btn-ajouter {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn-ajouter:hover {
+            transform: scale(1.02);
+        }
+
+        .btn-suggerer {
+            background: linear-gradient(135deg, #00b894, #00a86b);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn-suggerer:hover {
+            transform: scale(1.02);
+        }
+
+        #notification {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .matieres-disponibles {
+            margin-top: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .matieres-disponibles .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .matieres-disponibles .tags span {
+            background: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            border: 1px solid #dfe6e9;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .matieres-disponibles .tags span:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>📚 Mes Matières</h1>
+            <p>Choisissez vos matières pour un planning personnalisé</p>
+
+            <!-- MENU DE NAVIGATION AVEC HAMBURGER -->
+            <div style="display:flex; align-items:center; flex-wrap:wrap; width:100%;">
+                <div class="hamburger" onclick="toggleMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="nav-menu" id="navMenu">
+                    <button class="btn" onclick="window.location.href='index.html'">🏠 Accueil</button>
+                    <button class="btn" onclick="window.location.href='emploi.html'">📖 Emploi du temps</button>
+                    <button class="btn active" onclick="window.location.href='matieres.html'">📚 Mes matières</button>
+                    <button class="btn" onclick="window.location.href='planning.html'">📅 Mon planning</button>
+                    <button class="btn" onclick="window.location.href='dashboard.html'">📊 Tableau de bord</button>
+                    <button class="btn btn-success" onclick="window.location.href='index.html'">👤 Nouvel utilisateur</button>
+                    <button class="btn btn-connexion" id="btnConnexion">🔐 Connexion</button>
+                </div>
+            </div>
+
+            <!-- Zone utilisateur -->
+            <div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <input type="text" id="userId" placeholder="Votre ID utilisateur" style="padding:8px 12px; border:2px solid #dfe6e9; border-radius:8px; flex:1; min-width:150px;">
+                <button class="btn" id="btnCharger">🔍 Charger</button>
+                <button class="btn btn-success" onclick="window.location.href='index.html'">👤 Nouvel utilisateur</button>
+            </div>
+        </div>
+
+        <!-- CONTENU PRINCIPAL -->
+        <div class="matieres-container">
+            <!-- FORMULAIRE D'AJOUT -->
+            <div class="matiere-form">
+                <h3>➕ Ajouter une matière</h3>
+
+                <label>Nom de la matière</label>
+                <input type="text" id="matiereNom" placeholder="Ex: Mathématiques" list="matieresSuggestion">
+                <datalist id="matieresSuggestion">
+                    <option value="Mathématiques">
+                    <option value="Français">
+                    <option value="Anglais">
+                    <option value="Espagnol">
+                    <option value="Allemand">
+                    <option value="Histoire-Géographie">
+                    <option value="Physique-Chimie">
+                    <option value="SVT">
+                    <option value="Philosophie">
+                    <option value="SES">
+                    <option value="NSI">
+                    <option value="EPS">
+                    <option value="Arts">
+                    <option value="Musique">
+                    <option value="Droit">
+                    <option value="Économie">
+                </datalist>
+
+                <label>Niveau de difficulté</label>
+                <select id="matiereNiveau">
+                    <option value="facile">🟢 Facile</option>
+                    <option value="moyen" selected>🟡 Moyen</option>
+                    <option value="difficile">🔴 Difficile</option>
+                </select>
+
+                <label>Temps d'étude recommandé (heures par semaine)</label>
+                <input type="number" id="matiereTemps" placeholder="2" min="0.5" max="5" step="0.5" value="2">
+
+                <button class="btn-ajouter" id="btnAjouterMatiere">➕ Ajouter cette matière</button>
+                <button class="btn-suggerer" id="btnSuggerer">📋 Suggérer depuis mon emploi du temps</button>
+            </div>
+
+            <!-- LISTE DES MATIÈRES -->
+            <div class="matieres-list">
+                <h3>
+                    📚 Mes matières
+                    <span style="font-size:12px; font-weight:normal; color:#636e72;" id="nbMatieres">0 matière</span>
+                </h3>
+                <div id="matieresListContent">
+                    <div style="text-align:center; padding:30px; color:#b2bec3;">
+                        <span style="font-size:3em; display:block; margin-bottom:10px;">📚</span>
+                        Aucune matière sélectionnée<br>
+                        <small>Ajoutez vos matières ci-contre</small>
+                    </div>
+                </div>
+
+                <!-- MATIÈRES DISPONIBLES -->
+                <div class="matieres-disponibles">
+                    <h4 style="font-size:14px; color:#636e72;">📋 Matières disponibles</h4>
+                    <div class="tags" id="matieresTags">
+                        <span onclick="ajouterMatiereRapide('Mathématiques')">Mathématiques</span>
+                        <span onclick="ajouterMatiereRapide('Français')">Français</span>
+                        <span onclick="ajouterMatiereRapide('Anglais')">Anglais</span>
+                        <span onclick="ajouterMatiereRapide('Espagnol')">Espagnol</span>
+                        <span onclick="ajouterMatiereRapide('Histoire-Géographie')">Histoire-Géo</span>
+                        <span onclick="ajouterMatiereRapide('Physique-Chimie')">Physique-Chimie</span>
+                        <span onclick="ajouterMatiereRapide('SVT')">SVT</span>
+                        <span onclick="ajouterMatiereRapide('Philosophie')">Philosophie</span>
+                        <span onclick="ajouterMatiereRapide('NSI')">NSI</span>
+                        <span onclick="ajouterMatiereRapide('EPS')">EPS</span>
+                        <span onclick="ajouterMatiereRapide('SES')">SES</span>
+                        <span onclick="ajouterMatiereRapide('Arts')">Arts</span>
+                        <span onclick="ajouterMatiereRapide('Musique')">Musique</span>
+                        <span onclick="ajouterMatiereRapide('Droit')">Droit</span>
+                        <span onclick="ajouterMatiereRapide('Économie')">Économie</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOTIFICATION -->
+        <div id="notification"></div>
+    </div>
+
+    <script>
+        // ============================================
+        // PAGE GESTION DES MATIÈRES
+        // ============================================
+
+        let utilisateurId = localStorage.getItem('userId') || '';
+        let matieres = [];
+
+        function afficherNotification(message, type = 'info') {
+            const el = document.getElementById('notification');
+            el.textContent = message;
+            el.style.display = 'block';
+            const colors = {
+                success: '#d4edda',
+                warning: '#fff3cd',
+                error: '#f8d7da',
+                info: '#d1ecf1'
+            };
+            const textColors = {
+                success: '#155724',
+                warning: '#856404',
+                error: '#721c24',
+                info: '#0c5460'
+            };
+            el.style.backgroundColor = colors[type] || colors.info;
+            el.style.color = textColors[type] || textColors.info;
+            setTimeout(() => el.style.display = 'none', 4000);
+        }
+
+        async function chargerMatieres() {
+            const userId = document.getElementById('userId').value.trim() || utilisateurId;
+            if (!userId) {
+                afficherNotification('⚠️ Veuillez entrer un ID utilisateur', 'warning');
+                return;
+            }
+            utilisateurId = userId;
+            localStorage.setItem('userId', userId);
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/auth/user/${userId}`);
+                const data = await response.json();
+                if (data.success && data.utilisateur && data.utilisateur.matieres) {
+                    matieres = data.utilisateur.matieres;
+                } else {
+                    // Essayer d'extraire de l'emploi du temps
+                    const emploiResponse = await fetch(`http://localhost:3000/api/emploi/${userId}`);
+                    const emploiData = await emploiResponse.json();
+                    if (emploiData.success && emploiData.emplois) {
+                        const matieresFromEmploi = [...new Set(emploiData.emplois.map(e => e.matiere))];
+                        matieres = matieresFromEmploi.map(m => ({
+                            nom: m,
+                            niveau: 'moyen',
+                            temps: 2
+                        }));
+                        await sauvegarderMatieres();
+                    } else {
+                        matieres = [];
+                    }
+                }
+                afficherListeMatieres();
+                document.getElementById('nbMatieres').textContent = `${matieres.length} matière${matieres.length > 1 ? 's' : ''}`;
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        async function sauvegarderMatieres() {
+            try {
+                await fetch(`http://localhost:3000/api/auth/user/${utilisateurId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ matieres: matieres })
+                });
+            } catch (error) {
+                console.error('Erreur sauvegarde:', error);
+            }
+        }
+
+        function afficherListeMatieres() {
+            const container = document.getElementById('matieresListContent');
+            if (matieres.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:30px; color:#b2bec3;">
+                        <span style="font-size:3em; display:block; margin-bottom:10px;">📚</span>
+                        Aucune matière sélectionnée
+                    </div>
+                `;
+                return;
+            }
+            let html = '';
+            for (const matiere of matieres) {
+                const niveauClass = `niveau-${matiere.niveau || 'moyen'}`;
+                const niveauLabel = {
+                    facile: '🟢 Facile',
+                    moyen: '🟡 Moyen',
+                    difficile: '🔴 Difficile'
+                }[matiere.niveau] || '🟡 Moyen';
+                html += `
+                    <div class="matiere-item">
+                        <div class="info">
+                            <span class="nom">📖 ${matiere.nom}</span>
+                            <span class="niveau ${niveauClass}">${niveauLabel}</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <span class="temps">⏱️ ${matiere.temps || 2}h/sem</span>
+                            <button class="delete-btn" onclick="supprimerMatiere('${matiere.nom}')">✕</button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        async function ajouterMatiere() {
+            const nom = document.getElementById('matiereNom').value.trim();
+            const niveau = document.getElementById('matiereNiveau').value;
+            const temps = parseFloat(document.getElementById('matiereTemps').value);
+            if (!nom) {
+                afficherNotification('⚠️ Veuillez entrer le nom de la matière', 'warning');
+                return;
+            }
+            if (matieres.some(m => m.nom.toLowerCase() === nom.toLowerCase())) {
+                afficherNotification('⚠️ Cette matière est déjà dans votre liste', 'warning');
+                return;
+            }
+            matieres.push({ nom, niveau, temps });
+            await sauvegarderMatieres();
+            document.getElementById('matiereNom').value = '';
+            document.getElementById('matiereTemps').value = '2';
+            afficherListeMatieres();
+            document.getElementById('nbMatieres').textContent = `${matieres.length} matière${matieres.length > 1 ? 's' : ''}`;
+            afficherNotification(`✅ ${nom} ajouté !`, 'success');
+        }
+
+        async function ajouterMatiereRapide(nom) {
+            if (matieres.some(m => m.nom.toLowerCase() === nom.toLowerCase())) {
+                afficherNotification('⚠️ Déjà dans la liste', 'warning');
+                return;
+            }
+            matieres.push({ nom, niveau: 'moyen', temps: 2 });
+            await sauvegarderMatieres();
+            afficherListeMatieres();
+            document.getElementById('nbMatieres').textContent = `${matieres.length} matière${matieres.length > 1 ? 's' : ''}`;
+            afficherNotification(`✅ ${nom} ajouté !`, 'success');
+        }
+
+        async function supprimerMatiere(nom) {
+            if (!confirm(`Supprimer ${nom} ?`)) return;
+            matieres = matieres.filter(m => m.nom !== nom);
+            await sauvegarderMatieres();
+            afficherListeMatieres();
+            document.getElementById('nbMatieres').textContent = `${matieres.length} matière${matieres.length > 1 ? 's' : ''}`;
+            afficherNotification(`🗑️ ${nom} supprimé`, 'success');
+        }
+
+        async function suggererMatieres() {
+            const userId = document.getElementById('userId').value.trim() || utilisateurId;
+            if (!userId) {
+                afficherNotification('⚠️ Veuillez charger un utilisateur', 'warning');
+                return;
+            }
+            try {
+                const response = await fetch(`http://localhost:3000/api/emploi/${userId}`);
+                const data = await response.json();
+                if (data.success && data.emplois) {
+                    const matieresFromEmploi = [...new Set(data.emplois.map(e => e.matiere))];
+                    let ajoutees = 0;
+                    for (const matiere of matieresFromEmploi) {
+                        if (!matieres.some(m => m.nom.toLowerCase() === matiere.toLowerCase())) {
+                            matieres.push({ nom: matiere, niveau: 'moyen', temps: 2 });
+                            ajoutees++;
+                        }
+                    }
+                    if (ajoutees > 0) {
+                        await sauvegarderMatieres();
+                        afficherListeMatieres();
+                        document.getElementById('nbMatieres').textContent = `${matieres.length} matière${matieres.length > 1 ? 's' : ''}`;
+                        afficherNotification(`✅ ${ajoutees} matière(s) ajoutée(s) !`, 'success');
+                    } else {
+                        afficherNotification('ℹ️ Toutes les matières sont déjà dans votre liste', 'info');
+                    }
+                }
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('btnCharger').addEventListener('click', chargerMatieres);
+            document.getElementById('btnAjouterMatiere').addEventListener('click', ajouterMatiere);
+            document.getElementById('btnSuggerer').addEventListener('click', suggererMatieres);
+            document.getElementById('matiereNom').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') ajouterMatiere();
+            });
+            if (utilisateurId) {
+                document.getElementById('userId').value = utilisateurId;
+                chargerMatieres();
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.mettreAJourMenuConnexion) {
+                window.mettreAJourMenuConnexion();
+            }
+        });
+
+        function toggleMenu() {
+            const navMenu = document.getElementById('navMenu');
+            const hamburger = document.querySelector('.hamburger');
+            if (navMenu) {
+                navMenu.classList.toggle('open');
+                if (hamburger) hamburger.classList.toggle('active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const navMenu = document.getElementById('navMenu');
+            if (navMenu) {
+                navMenu.querySelectorAll('.btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        navMenu.classList.remove('open');
+                        const hamburger = document.querySelector('.hamburger');
+                        if (hamburger) hamburger.classList.remove('active');
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

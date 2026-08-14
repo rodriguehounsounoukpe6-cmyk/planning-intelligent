@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📅 Mon Planning - Planning Intelligent</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        /* Menu de navigation */
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            background: rgba(255,255,255,0.15);
+            padding: 10px 15px;
+            border-radius: 12px;
+        }
+        .nav-menu .btn {
+            padding: 8px 18px;
+            font-size: 13px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .nav-menu .btn:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateY(-2px);
+        }
+        .nav-menu .btn.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+        .nav-menu .btn-success {
+            background: #00b894;
+            border-color: #00b894;
+        }
+        .nav-menu .btn-success:hover {
+            background: #00a86b;
+        }
+
+        .planning-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .planning-header .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .week-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .week-selector button {
+            background: #f0f3f8;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .week-selector button:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .week-selector span {
+            font-weight: 600;
+            color: #2d3436;
+        }
+
+        .jour-planning {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .jour-planning:hover {
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .jour-planning .jour-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .jour-planning .jour-title h3 {
+            margin: 0;
+            color: #2d3436;
+        }
+
+        .jour-planning .jour-title .badge {
+            background: #f0f3f8;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .tache-planning {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+            cursor: default;
+        }
+
+        .tache-planning:hover {
+            background: #f0f3f8;
+            transform: translateX(5px);
+        }
+
+        /* Mode édition */
+        .tache-planning.editable {
+            cursor: pointer;
+            border: 2px dashed transparent;
+            transition: all 0.3s;
+        }
+
+        .tache-planning.editable:hover {
+            border-color: #667eea;
+            background: #e8f0fe;
+        }
+
+        .tache-planning .info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tache-planning .heure {
+            font-weight: bold;
+            color: #667eea;
+            background: #e8f0fe;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        .tache-planning .priorite {
+            font-size: 12px;
+            color: #ff6b6b;
+        }
+
+        .tache-planning .actions-tache {
+            display: flex;
+            gap: 5px;
+        }
+
+        .tache-planning .actions-tache button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .tache-planning .actions-tache .btn-modifier-tache:hover {
+            background: #fdcb6e;
+        }
+
+        .tache-planning .actions-tache .btn-supprimer-tache:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .empty-planning {
+            text-align: center;
+            padding: 40px;
+            color: #b2bec3;
+        }
+
+        .empty-planning .emoji {
+            font-size: 3em;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        /* Mode édition - bouton */
+        .btn-edition {
+            background: linear-gradient(135deg, #fdcb6e, #f39c12);
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-edition:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(253, 203, 110, 0.4);
+        }
+
+        .btn-edition.active {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+
+        .btn-edition.active:hover {
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-pdf {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-pdf:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-generer {
+            background: linear-gradient(135deg, #00b894, #00a86b);
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-generer:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(0, 184, 148, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .planning-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .week-selector {
+                justify-content: center;
+            }
+            .tache-planning {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .tache-planning .info {
+                justify-content: center;
+            }
+            .tache-planning .actions-tache {
+                justify-content: center;
+                margin-top: 5px;
+            }
+            .nav-menu {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>📅 Mon Planning</h1>
+            <p>Votre emploi du temps optimisé et personnalisable</p>
+            
+            <!-- MENU DE NAVIGATION -->
+            <div class="nav-menu">
+                <button class="btn" onclick="window.location.href='../index.html'">🏠 Accueil</button>
+                <button class="btn" onclick="window.location.href='emploi.html'">📖 Emploi du temps</button>
+                <button class="btn" onclick="window.location.href='matieres.html'">📚 Mes matières</button>
+                <button class="btn active" onclick="window.location.href='planning.html'">📅 Mon planning</button>
+                <button class="btn" onclick="window.location.href='dashboard.html'">📊 Tableau de bord</button>
+            </div>
+
+            <div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn-generer" onclick="genererPlanning()">🔄 Générer le planning</button>
+                <button class="btn-edition" id="btnModeEdition" onclick="toggleEdition()">✏️ Modifier le planning</button>
+                <button class="btn-pdf" id="btnTelechargerPDF" onclick="telechargerPDF()">📄 Télécharger PDF</button>
+            </div>
+        </div>
+
+        <!-- Sélecteur de semaine -->
+        <div class="week-selector" style="margin-bottom:20px;">
+            <button onclick="changerSemaine(-1)">◀</button>
+            <span id="semaineLabel">Semaine du 13 août 2026</span>
+            <button onclick="changerSemaine(1)">▶</button>
+        </div>
+
+        <!-- Planning -->
+        <div id="planningContainer">
+            <div class="empty-planning">
+                <span class="emoji">📅</span>
+                <p>Votre planning s'affichera ici</p>
+                <small style="color:#b2bec3;">Cliquez sur "Générer le planning" pour commencer</small>
+            </div>
+        </div>
+
+        <!-- Zone de notification -->
+        <div id="notification" style="margin-top:20px; padding:15px; border-radius:10px; display:none; text-align:center; font-weight:500;"></div>
+    </div>
+
+    <script>
+        // ============================================
+        // PAGE PLANNING AVEC MODIFICATION
+        // ============================================
+
+        let semaineOffset = 0;
+        let userId = localStorage.getItem('userId') || '';
+        let planningData = [];
+        let modeEdition = false;
+
+        // ==========================================
+        // GESTION DES DATES
+        // ==========================================
+
+        function getSemaineDates(offset) {
+            const maintenant = new Date();
+            const jourActuel = maintenant.getDay();
+            const debutSemaine = new Date(maintenant);
+            debutSemaine.setDate(maintenant.getDate() - jourActuel + 1 + (offset * 7));
+            
+            const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+            const dates = [];
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(debutSemaine);
+                date.setDate(debutSemaine.getDate() + i);
+                dates.push({
+                    nom: jours[i],
+                    date: date,
+                    jourSemaine: ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'][i]
+                });
+            }
+            
+            return dates;
+        }
+
+        function changerSemaine(offset) {
+            semaineOffset += offset;
+            afficherSemaine();
+        }
+
+        // ==========================================
+        // AFFICHER LE PLANNING
+        // ==========================================
+
+        function afficherSemaine() {
+            const dates = getSemaineDates(semaineOffset);
+            const label = `Semaine du ${dates[0].date.toLocaleDateString('fr-FR')}`;
+            document.getElementById('semaineLabel').textContent = label;
+            chargerPlanning(dates);
+        }
+
+        async function chargerPlanning(dates) {
+            const container = document.getElementById('planningContainer');
+            
+            if (!userId) {
+                container.innerHTML = `
+                    <div class="empty-planning">
+                        <span class="emoji">👤</span>
+                        <p>Veuillez vous connecter d'abord</p>
+                        <button class="btn" onclick="window.location.href='../index.html'">Aller à l'accueil</button>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/optimisation/generer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ utilisateur_id: userId })
+                });
+                const data = await response.json();
+
+                if (!data.success || !data.plan || data.plan.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-planning">
+                            <span class="emoji">📚</span>
+                            <p>Vous n'avez pas encore de planning</p>
+                            <small style="color:#b2bec3;">Ajoutez des cours et des tâches, puis générez votre planning</small>
+                        </div>
+                    `;
+                    return;
+                }
+
+                planningData = data.plan;
+                afficherPlanning(dates, planningData);
+
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                container.innerHTML = `
+                    <div class="empty-planning">
+                        <span class="emoji">❌</span>
+                        <p>Erreur lors du chargement du planning</p>
+                        <small style="color:#b2bec3;">${error.message}</small>
+                    </div>
+                `;
+            }
+        }
+
+        function afficherPlanning(dates, plan) {
+            const container = document.getElementById('planningContainer');
+            const emojis = {
+                domestique: '🧹',
+                personnel: '👤',
+                etude: '📚'
+            };
+
+            let html = '';
+
+            for (const jour of dates) {
+                const tachesJour = plan.filter(p => p.jour === jour.jourSemaine);
+                const totalTaches = tachesJour.length;
+                const dureeTotale = tachesJour.reduce((sum, t) => sum + (t.duree || 30), 0);
+
+                html += `
+                    <div class="jour-planning">
+                        <div class="jour-title">
+                            <h3>${jour.nom} ${jour.date.toLocaleDateString('fr-FR')}</h3>
+                            <span class="badge">${totalTaches} tâches · ${Math.round(dureeTotale/60)}h</span>
+                        </div>
+                `;
+
+                if (tachesJour.length > 0) {
+                    for (const tache of tachesJour) {
+                        const emoji = emojis[tache.type] || '📌';
+                        const editableClass = modeEdition ? 'editable' : '';
+                        html += `
+                            <div class="tache-planning ${editableClass}" 
+                                 onclick="${modeEdition ? `modifierTache('${tache.tache_id || tache.id || ''}')` : ''}"
+                                 data-id="${tache.tache_id || tache.id || ''}">
+                                <div class="info">
+                                    <span>${emoji}</span>
+                                    <span>${tache.tache}</span>
+                                    <span class="heure">${tache.heure_debut}h - ${tache.heure_fin}h</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span class="priorite">⭐ ${tache.priorite}</span>
+                                    <span style="font-size:12px;color:#666;">${tache.duree || 30}min</span>
+                                    ${modeEdition ? `
+                                        <div class="actions-tache">
+                                            <button class="btn-modifier-tache" onclick="event.stopPropagation(); modifierTache('${tache.tache_id || tache.id || ''}')" title="Modifier">✏️</button>
+                                            <button class="btn-supprimer-tache" onclick="event.stopPropagation(); supprimerTache('${tache.tache_id || tache.id || ''}')" title="Supprimer">🗑️</button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    html += `
+                        <div style="color:#b2bec3;padding:15px;text-align:center;font-size:14px;">
+                            🎉 Journée libre !
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ==========================================
+        // GÉNÉRER LE PLANNING
+        // ==========================================
+
+        async function genererPlanning() {
+            if (!userId) {
+                afficherNotification('⚠️ Veuillez vous connecter d\'abord', 'warning');
+                return;
+            }
+
+            try {
+                const btn = document.querySelector('.btn-generer');
+                btn.textContent = '⏳ Génération...';
+                btn.disabled = true;
+
+                const response = await fetch('http://localhost:3000/api/optimisation/generer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ utilisateur_id: userId })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    afficherNotification('✅ Planning généré avec succès !', 'success');
+                    afficherSemaine();
+                } else {
+                    afficherNotification('❌ Erreur: ' + data.message, 'error');
+                }
+
+                btn.textContent = '🔄 Générer le planning';
+                btn.disabled = false;
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+                document.querySelector('.btn-generer').textContent = '🔄 Générer le planning';
+                document.querySelector('.btn-generer').disabled = false;
+            }
+        }
+
+        // ==========================================
+        // MODE ÉDITION
+        // ==========================================
+
+        function toggleEdition() {
+            modeEdition = !modeEdition;
+            const btn = document.getElementById('btnModeEdition');
+            
+            if (modeEdition) {
+                btn.textContent = '🔒 Verrouiller le planning';
+                btn.classList.add('active');
+                afficherNotification('✏️ Mode édition activé - Cliquez sur une tâche pour la modifier', 'info');
+            } else {
+                btn.textContent = '✏️ Modifier le planning';
+                btn.classList.remove('active');
+                afficherNotification('🔒 Mode édition désactivé', 'info');
+            }
+            
+            // Rafraîchir l'affichage
+            const dates = getSemaineDates(semaineOffset);
+            afficherPlanning(dates, planningData);
+        }
+
+        // ==========================================
+        // MODIFIER UNE TÂCHE
+        // ==========================================
+
+        function modifierTache(id) {
+            if (!modeEdition) return;
+            
+            // Trouver la tâche dans les données
+            const tache = planningData.find(p => (p.tache_id || p.id) === id);
+            if (!tache) {
+                afficherNotification('❌ Tâche non trouvée', 'error');
+                return;
+            }
+
+            // Demander les nouvelles valeurs
+            const nouveauNom = prompt('✏️ Nouveau nom de la tâche :', tache.tache);
+            if (nouveauNom === null) return;
+            
+            const nouvelleHeure = prompt('🕐 Nouvelle heure de début (ex: 14) :', tache.heure_debut);
+            if (nouvelleHeure === null) return;
+            
+            const nouvelleFin = prompt('🕐 Nouvelle heure de fin (ex: 15) :', tache.heure_fin);
+            if (nouvelleFin === null) return;
+
+            // Mettre à jour
+            tache.tache = nouveauNom || tache.tache;
+            tache.heure_debut = parseInt(nouvelleHeure) || tache.heure_debut;
+            tache.heure_fin = parseInt(nouvelleFin) || tache.heure_fin;
+
+            afficherNotification('✅ Tâche modifiée avec succès !', 'success');
+            
+            // Rafraîchir
+            const dates = getSemaineDates(semaineOffset);
+            afficherPlanning(dates, planningData);
+        }
+
+        // ==========================================
+        // SUPPRIMER UNE TÂCHE
+        // ==========================================
+
+        function supprimerTache(id) {
+            if (!modeEdition) return;
+            if (!confirm('⚠️ Supprimer cette tâche du planning ?')) return;
+
+            planningData = planningData.filter(p => (p.tache_id || p.id) !== id);
+            afficherNotification('🗑️ Tâche supprimée du planning', 'success');
+            
+            const dates = getSemaineDates(semaineOffset);
+            afficherPlanning(dates, planningData);
+        }
+
+        // ==========================================
+        // TÉLÉCHARGER LE PDF
+        // ==========================================
+
+        async function telechargerPDF() {
+            if (!userId) {
+                afficherNotification('⚠️ Veuillez vous connecter d\'abord', 'warning');
+                return;
+            }
+
+            try {
+                const btn = document.getElementById('btnTelechargerPDF');
+                btn.textContent = '⏳ Génération...';
+                btn.disabled = true;
+
+                const response = await fetch('http://localhost:3000/api/pdf/generer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ utilisateur_id: userId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const link = document.createElement('a');
+                    link.href = `http://localhost:3000${data.pdf.url}`;
+                    link.download = data.pdf.filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    afficherNotification('✅ PDF téléchargé avec succès !', 'success');
+                } else {
+                    afficherNotification('❌ Erreur: ' + data.message, 'error');
+                }
+
+                btn.textContent = '📄 Télécharger PDF';
+                btn.disabled = false;
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+                document.getElementById('btnTelechargerPDF').textContent = '📄 Télécharger PDF';
+                document.getElementById('btnTelechargerPDF').disabled = false;
+            }
+        }
+
+        // ==========================================
+        // NOTIFICATIONS
+        // ==========================================
+
+        function afficherNotification(message, type = 'info') {
+            const el = document.getElementById('notification');
+            el.textContent = message;
+            el.style.display = 'block';
+            
+            const colors = {
+                success: '#d4edda',
+                warning: '#fff3cd',
+                error: '#f8d7da',
+                info: '#d1ecf1'
+            };
+            const textColors = {
+                success: '#155724',
+                warning: '#856404',
+                error: '#721c24',
+                info: '#0c5460'
+            };
+            el.style.backgroundColor = colors[type] || colors.info;
+            el.style.color = textColors[type] || textColors.info;
+            
+            setTimeout(() => {
+                el.style.display = 'none';
+            }, 5000);
+        }
+
+        // ==========================================
+        // INITIALISATION
+        // ==========================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Vérifier si l'ID utilisateur est dans l'URL (mode édition depuis emploi.html)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'edit') {
+                modeEdition = true;
+                document.getElementById('btnModeEdition').textContent = '🔒 Verrouiller le planning';
+                document.getElementById('btnModeEdition').classList.add('active');
+            }
+
+            afficherSemaine();
+        });
+
+        // Bouton "Nouvel utilisateur" dans le menu
+        document.querySelector('.nav-menu .btn-success')?.addEventListener('click', () => {
+            window.location.href = '../index.html';
+        });
+    </script>
+</body>
+</html>

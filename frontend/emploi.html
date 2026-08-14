@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📖 Emploi du temps - Planning Intelligent</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            background: rgba(255,255,255,0.15);
+            padding: 10px 15px;
+            border-radius: 12px;
+        }
+        .nav-menu .btn {
+            padding: 8px 18px;
+            font-size: 13px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .nav-menu .btn:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateY(-2px);
+        }
+        .nav-menu .btn.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+        .btn-connexion {
+            background: #e74c3c;
+            border-color: #e74c3c;
+            color: white;
+        }
+        .btn-connexion:hover {
+            background: #c0392b;
+            border-color: #c0392b;
+        }
+
+        /* Hamburger */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 8px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            margin-left: auto;
+        }
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            margin: 3px 0;
+            border-radius: 3px;
+            transition: 0.3s;
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        .nav-menu {
+            transition: all 0.3s ease;
+        }
+        .nav-menu.open {
+            display: flex !important;
+        }
+
+        @media (min-width: 769px) {
+            .nav-menu {
+                display: flex !important;
+            }
+            .hamburger {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                width: 100%;
+                background: rgba(26, 26, 46, 0.95);
+                border-radius: 12px;
+                padding: 15px;
+                margin-top: 10px;
+                gap: 8px;
+            }
+            .nav-menu .btn {
+                width: 100%;
+                text-align: center;
+                padding: 14px 20px;
+                font-size: 15px;
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.1);
+            }
+            .emploi-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+
+        .emploi-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+        .emploi-form {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .emploi-form label {
+            display: block;
+            font-size: 13px;
+            color: #636e72;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .emploi-form input, .emploi-form select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-top: 3px;
+        }
+        .emploi-list {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .emploi-list h3 {
+            margin-bottom: 15px;
+            color: #2d3436;
+        }
+        .cours-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            border-left: 3px solid #667eea;
+        }
+        .cours-item .info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .cours-item .info .matiere {
+            font-weight: 500;
+        }
+        .cours-item .delete-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 3px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-generer {
+            background: linear-gradient(135deg, #00b894, #00a86b);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+        }
+        .btn-generer:hover {
+            transform: scale(1.02);
+        }
+        #notification {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            text-align: center;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📖 Mon Emploi du Temps</h1>
+            <p>Gérez vos cours et générez votre planning optimisé</p>
+            
+            <div style="display:flex; align-items:center; flex-wrap:wrap; width:100%;">
+                <div class="hamburger" onclick="toggleMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="nav-menu" id="navMenu">
+                    <button class="btn" onclick="window.location.href='index.html'">🏠 Accueil</button>
+                    <button class="btn active" onclick="window.location.href='emploi.html'">📖 Emploi du temps</button>
+                    <button class="btn" onclick="window.location.href='matieres.html'">📚 Mes matières</button>
+                    <button class="btn" onclick="window.location.href='planning.html'">📅 Mon planning</button>
+                    <button class="btn" onclick="window.location.href='dashboard.html'">📊 Tableau de bord</button>
+                    <button class="btn btn-success" onclick="window.location.href='index.html'">👤 Nouvel utilisateur</button>
+                    <button class="btn btn-connexion" id="btnConnexion">🔐 Connexion</button>
+                </div>
+            </div>
+
+            <div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <input type="text" id="userId" placeholder="Votre ID utilisateur" style="padding:8px 12px; border:2px solid #dfe6e9; border-radius:8px; flex:1; min-width:150px;">
+                <button class="btn" id="btnCharger">🔍 Charger</button>
+                <button class="btn btn-success" onclick="window.location.href='index.html'">👤 Nouvel utilisateur</button>
+            </div>
+        </div>
+
+        <div class="emploi-container">
+            <div class="emploi-form">
+                <h3>➕ Ajouter un cours</h3>
+                <label>Matière</label>
+                <input type="text" id="matiere" placeholder="Ex: Mathématiques">
+                <label>Jour</label>
+                <select id="jourCours">
+                    <option value="lundi">Lundi</option>
+                    <option value="mardi">Mardi</option>
+                    <option value="mercredi">Mercredi</option>
+                    <option value="jeudi">Jeudi</option>
+                    <option value="vendredi">Vendredi</option>
+                    <option value="samedi">Samedi</option>
+                    <option value="dimanche">Dimanche</option>
+                </select>
+                <label>Heure de début</label>
+                <input type="number" id="heureDebut" placeholder="8" min="6" max="22">
+                <label>Heure de fin</label>
+                <input type="number" id="heureFin" placeholder="10" min="7" max="23">
+                <button class="btn" id="btnAjouterCours" style="margin-top:15px; width:100%;">➕ Ajouter ce cours</button>
+                <button class="btn-generer" id="btnGenererPlanning">🚀 Générer mon planning</button>
+            </div>
+
+            <div class="emploi-list">
+                <h3>📚 Mes cours <span style="font-size:12px; font-weight:normal; color:#636e72;" id="nbCoursEmploi">0 cours</span></h3>
+                <div id="emploiListContent">
+                    <div style="text-align:center; padding:30px; color:#b2bec3;">
+                        <span style="font-size:3em; display:block; margin-bottom:10px;">📖</span>
+                        Aucun cours enregistré
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="notification"></div>
+    </div>
+
+    <script>
+        let utilisateurId = localStorage.getItem('userId') || '';
+        let coursActuels = [];
+
+        function afficherNotification(message, type = 'info') {
+            const el = document.getElementById('notification');
+            el.textContent = message;
+            el.style.display = 'block';
+            const colors = { success: '#d4edda', warning: '#fff3cd', error: '#f8d7da', info: '#d1ecf1' };
+            const textColors = { success: '#155724', warning: '#856404', error: '#721c24', info: '#0c5460' };
+            el.style.backgroundColor = colors[type] || colors.info;
+            el.style.color = textColors[type] || textColors.info;
+            setTimeout(() => el.style.display = 'none', 4000);
+        }
+
+        async function chargerCours() {
+            const userId = document.getElementById('userId').value.trim() || utilisateurId;
+            if (!userId) {
+                afficherNotification('⚠️ Veuillez entrer un ID utilisateur', 'warning');
+                return;
+            }
+            utilisateurId = userId;
+            localStorage.setItem('userId', userId);
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/emploi/${userId}`);
+                const data = await response.json();
+                if (data.success) {
+                    coursActuels = data.emplois || [];
+                    const container = document.getElementById('emploiListContent');
+                    if (coursActuels.length === 0) {
+                        container.innerHTML = `<div style="text-align:center;padding:30px;color:#b2bec3;"><span style="font-size:3em;display:block;margin-bottom:10px;">📖</span>Aucun cours enregistré</div>`;
+                    } else {
+                        let html = '';
+                        const jours = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+                        const joursFr = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+                        for (let i = 0; i < jours.length; i++) {
+                            const coursJour = coursActuels.filter(c => c.jour === jours[i]);
+                            if (coursJour.length > 0) {
+                                html += `<h4 style="color:#667eea;margin:10px 0 5px 0;">${joursFr[i]}</h4>`;
+                                for (const cours of coursJour) {
+                                    html += `
+                                        <div class="cours-item">
+                                            <div class="info">
+                                                <span class="matiere">📖 ${cours.matiere}</span>
+                                                <span style="color:#636e72;font-size:13px;">${cours.heure_debut}h - ${cours.heure_fin}h</span>
+                                            </div>
+                                            <button class="delete-btn" onclick="supprimerCours('${cours.id}')">✕</button>
+                                        </div>
+                                    `;
+                                }
+                            }
+                        }
+                        container.innerHTML = html;
+                    }
+                    document.getElementById('nbCoursEmploi').textContent = `${coursActuels.length} cours`;
+                    afficherNotification('✅ Emploi du temps chargé', 'success');
+                }
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        async function ajouterCours() {
+            const userId = document.getElementById('userId').value.trim() || utilisateurId;
+            if (!userId) {
+                afficherNotification('⚠️ Veuillez charger un utilisateur', 'warning');
+                return;
+            }
+            const matiere = document.getElementById('matiere').value.trim();
+            const jour = document.getElementById('jourCours').value;
+            const heureDebut = parseInt(document.getElementById('heureDebut').value);
+            const heureFin = parseInt(document.getElementById('heureFin').value);
+            if (!matiere || !heureDebut || !heureFin) {
+                afficherNotification('⚠️ Remplissez tous les champs', 'warning');
+                return;
+            }
+            if (heureDebut >= heureFin) {
+                afficherNotification('⚠️ Heure début avant heure fin', 'warning');
+                return;
+            }
+            try {
+                const response = await fetch('http://localhost:3000/api/emploi/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ utilisateur_id: userId, jour, heure_debut: heureDebut, heure_fin: heureFin, matiere })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    afficherNotification('✅ Cours ajouté !', 'success');
+                    document.getElementById('matiere').value = '';
+                    document.getElementById('heureDebut').value = '';
+                    document.getElementById('heureFin').value = '';
+                    await chargerCours();
+                }
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        async function supprimerCours(id) {
+            if (!confirm('Supprimer ce cours ?')) return;
+            try {
+                const response = await fetch(`http://localhost:3000/api/emploi/${id}`, { method: 'DELETE' });
+                const data = await response.json();
+                if (data.success) {
+                    afficherNotification('✅ Cours supprimé', 'success');
+                    await chargerCours();
+                }
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        async function genererPlanning() {
+            const userId = document.getElementById('userId').value.trim() || utilisateurId;
+            if (!userId) {
+                afficherNotification('⚠️ Veuillez charger un utilisateur', 'warning');
+                return;
+            }
+            try {
+                const response = await fetch('http://localhost:3000/api/optimisation/generer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ utilisateur_id: userId })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    afficherNotification('✅ Planning généré !', 'success');
+                    setTimeout(() => window.location.href = 'planning.html', 1000);
+                }
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        document.getElementById('btnCharger').addEventListener('click', chargerCours);
+        document.getElementById('btnAjouterCours').addEventListener('click', ajouterCours);
+        document.getElementById('btnGenererPlanning').addEventListener('click', genererPlanning);
+
+        if (utilisateurId) {
+            document.getElementById('userId').value = utilisateurId;
+            chargerCours();
+        }
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.mettreAJourMenuConnexion) {
+                window.mettreAJourMenuConnexion();
+            }
+        });
+
+        function toggleMenu() {
+            const navMenu = document.getElementById('navMenu');
+            const hamburger = document.querySelector('.hamburger');
+            if (navMenu) {
+                navMenu.classList.toggle('open');
+                if (hamburger) hamburger.classList.toggle('active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const navMenu = document.getElementById('navMenu');
+            if (navMenu) {
+                navMenu.querySelectorAll('.btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        navMenu.classList.remove('open');
+                        const hamburger = document.querySelector('.hamburger');
+                        if (hamburger) hamburger.classList.remove('active');
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

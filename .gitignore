@@ -1,0 +1,41 @@
+# Dossiers système
+.DS_Store
+Thumbs.db
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+
+# Fichiers de données
+backend/data.json
+*.db
+*.sqlite
+
+# Variables d'environnement
+.env
+.env.local
+.env.*.local
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# IDE
+.idea/
+*.iml
+
+# Logs
+logs/
+*.log
+
+# Build
+dist/
+build/
+*.min.js
+
+# OS
+*.tmp
+*.temp

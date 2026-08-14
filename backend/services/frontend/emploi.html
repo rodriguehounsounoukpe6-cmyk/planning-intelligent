@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📖 Emploi du temps - Planning Intelligent</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            background: rgba(255,255,255,0.15);
+            padding: 10px 15px;
+            border-radius: 12px;
+        }
+        .nav-menu .btn {
+            padding: 8px 18px;
+            font-size: 13px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .nav-menu .btn:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateY(-2px);
+        }
+        .nav-menu .btn.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+
+        .emploi-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+        .emploi-form {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .emploi-form label {
+            display: block;
+            font-size: 13px;
+            color: #636e72;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .emploi-form input, .emploi-form select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-top: 3px;
+        }
+        .emploi-form input:focus, .emploi-form select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .emploi-list {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .emploi-list h3 {
+            margin-bottom: 15px;
+            color: #2d3436;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .jour-group {
+            margin-bottom: 15px;
+        }
+        .jour-group h4 {
+            color: #667eea;
+            font-size: 14px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 8px;
+        }
+
+        .cours-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            border-left: 3px solid #667eea;
+        }
+        .cours-item .info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .cours-item .info .matiere {
+            font-weight: 500;
+        }
+        .cours-item .info .heure {
+            color: #636e72;
+            font-size: 13px;
+        }
+        .cours-item .delete-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 3px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .cours-item .delete-btn:hover {
+            background: #ee5a24;
+        }
+
+        .btn-generer {
+            background: linear-gradient(135deg, #00b894, #00a86b);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn-generer:hover {
+            transform: scale(1.02);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 30px;
+            color: #b2bec3;
+        }
+        .empty-message .emoji {
+            font-size: 3em;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        #notification {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .emploi-container {
+                grid-template-columns: 1fr;
+            }
+            .nav-menu {
+                justify-content: center;
+            }
+            .cours-item {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>📖 Mon Emploi du Temps</h1>
+            <p>Gérez vos cours et générez votre planning optimisé</p>
+
+            <!-- MENU DE NAVIGATION -->
+            <div class="nav-menu">
+                <button class="btn" onclick="window.location.href='index.html'">🏠 Accueil</button>
+                <button class="btn active" onclick="window.location.href='emploi.html'">📖 Emploi du temps</button>
+                <button class="btn" onclick="window.location.href='planning.html'">📅 Mon planning</button>
+                <button class="btn" onclick="window.location.href='dashboard.html'">📊 Tableau de bord</button>
+            </div>
+
+            <!-- Zone utilisateur -->
+            <div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <input type="text" id="userId" placeholder="Votre ID utilisateur" style="padding:8px 12px; border:2px solid #dfe6e9; border-radius:8px; flex:1; min-width:150px;">
+                <button class="btn" id="btnCharger">🔍 Charger</button>
+                <button class="btn btn-success" onclick="window.location.href='index.html'">👤 Nouvel utilisateur</button>
+            </div>
+        </div>
+
+        <!-- CONTENU PRINCIPAL -->
+        <div class="emploi-container">
+            <!-- FORMULAIRE D'AJOUT -->
+            <div class="emploi-form">
+                <h3>➕ Ajouter un cours</h3>
+                <label>Matière</label>
+                <input type="text" id="matiere" placeholder="Ex: Mathématiques">
+
+                <label>Jour</label>
+                <select id="jourCours">
+                    <option value="lundi">Lundi</option>
+                    <option value="mardi">Mardi</option>
+                    <option value="mercredi">Mercredi</option>
+                    <option value="jeudi">Jeudi</option>
+                    <option value="vendredi">Vendredi</option>
+                    <option value="samedi">Samedi</option>
+                    <option value="dimanche">Dimanche</option>
+                </select>
+
+                <label>Heure de début</label>
+                <input type="number" id="heureDebut" placeholder="8" min="6" max="22">
+
+                <label>Heure de fin</label>
+                <input type="number" id="heureFin" placeholder="10" min="7" max="23">
+
+                <button class="btn" id="btnAjouterCours" style="margin-top:15px; width:100%;">➕ Ajouter ce cours</button>
+
+                <button class="btn-generer" id="btnGenererPlanning">🚀 Générer mon planning</button>
+            </div>
+
+            <!-- LISTE DES COURS -->
+            <div class="emploi-list">
+                <h3>
+                    📚 Mes cours
+                    <span style="font-size:12px; font-weight:normal; color:#636e72;" id="nbCoursEmploi">0 cours</span>
+                </h3>
+                <div id="emploiListContent">
+                    <div class="empty-message">
+                        <span class="emoji">📖</span>
+                        Aucun cours enregistré<br>
+                        <small>Ajoutez votre emploi du temps ci-contre</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOTIFICATION -->
+        <div id="notification"></div>
+    </div>
+
+    <script>
+        // ============================================
+        // PAGE EMPLOI DU TEMPS
+        // ============================================
+
+        let utilisateurId = localStorage.getItem('userId') || '';
+        let coursActuels = [];
+
+        // ==========================================
+        // AFFICHER UNE NOTIFICATION
+        // ==========================================
+
+        function afficherNotification(message, type = 'info') {
+            const el = document.getElementById('notification');
+            el.textContent = message;
+            el.style.display = 'block';
+
+            const colors = {
+                success: '#d4edda',
+                warning: '#fff3cd',
+                error: '#f8d7da',
+                info: '#d1ecf1'
+            };
+            const textColors = {
+                success: '#155724',
+                warning: '#856404',
+                error: '#721c24',
+                info: '#0c5460'
+            };
+            el.style.backgroundColor = colors[type] || colors.info;
+            el.style.color = textColors[type] || textColors.info;
+
+            setTimeout(() => {
+                el.style.display = 'none';
+            }, 5000);
+        }
+
+        // ==========================================
+        // CHARGER LES COURS
+        // ==========================================
+
+        async function chargerCours() {
+            const userId = document.getElementById('userId').value.trim() || utilisateurId;
+            if (!userId) {
+                afficherNotification('⚠️ Veuillez entrer un ID utilisateur', 'warning');
+                return;
+            }
+
+            utilisateurId = userId;
+            localStorage.setItem('userId', userId);
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/emploi/${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    coursActuels = data.emplois || [];
+                    afficherListeCours();
+                    document.getElementById('nbCoursEmploi').textContent = `${coursActuels.length} cours`;
+                    afficherNotification('✅ Emploi du temps chargé avec succès', 'success');
+                } else {
+                    afficherNotification('❌ Erreur: ' + data.message, 'error');
+                }
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        // ==========================================
+        // AFFICHER LA LISTE DES COURS
+        // ==========================================
+
+        function afficherListeCours() {
+            const container = document.getElementById('emploiListContent');
+
+            if (coursActuels.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-message">
+                        <span class="emoji">📖</span>
+                        Aucun cours enregistré<br>
+                        <small>Ajoutez votre emploi du temps ci-contre</small>
+                    </div>
+                `;
+                return;
+            }
+
+            const jours = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+            const joursFr = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+            let html = '';
+
+            for (let i = 0; i < jours.length; i++) {
+                const coursJour = coursActuels.filter(c => c.jour === jours[i])
+                    .sort((a, b) => a.heure_debut - b.heure_debut);
+
+                if (coursJour.length > 0) {
+                    html += `<div class="jour-group"><h4>${joursFr[i]}</h4>`;
+                    for (const cours of coursJour) {
+                        html += `
+                            <div class="cours-item">
+                                <div class="info">
+                                    <span class="matiere">📖 ${cours.matiere}</span>
+                                    <span class="heure">${cours.heure_debut}h - ${cours.heure_fin}h</span>
+                                </div>
+                                <button class="delete-btn" onclick="supprimerCours('${cours.id}')">✕</button>
+                            </div>
+                        `;
+                    }
+                    html += `</div>`;
+                }
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ==========================================
+        // AJOUTER UN COURS
+        // ==========================================
+
+        async function ajouterCours() {
+            const userId = document.getElementById('userId').value.trim() || utilisateurId;
+            if (!userId) {
+                afficherNotification('⚠️ Veuillez charger un utilisateur d\'abord', 'warning');
+                return;
+            }
+
+            const matiere = document.getElementById('matiere').value.trim();
+            const jour = document.getElementById('jourCours').value;
+            const heureDebut = parseInt(document.getElementById('heureDebut').value);
+            const heureFin = parseInt(document.getElementById('heureFin').value);
+
+            if (!matiere) {
+                afficherNotification('⚠️ Veuillez entrer une matière', 'warning');
+                return;
+            }
+
+            if (!heureDebut || !heureFin) {
+                afficherNotification('⚠️ Veuillez entrer les heures', 'warning');
+                return;
+            }
+
+            if (heureDebut >= heureFin) {
+                afficherNotification('⚠️ L\'heure de début doit être avant l\'heure de fin', 'warning');
+                return;
+            }
+
+            if (heureDebut < 6 || heureFin > 23) {
+                afficherNotification('⚠️ Les heures doivent être entre 6h et 23h', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/emploi/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        utilisateur_id: userId,
+                        jour: jour,
+                        heure_debut: heureDebut,
+                        heure_fin: heureFin,
+                        matiere: matiere,
+                        priorite: 3
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    afficherNotification('✅ Cours ajouté avec succès !', 'success');
+                    document.getElementById('matiere').value = '';
+                    document.getElementById('heureDebut').value = '';
+                    document.getElementById('heureFin').value = '';
+                    await chargerCours();
+                } else {
+                    afficherNotification('❌ Erreur: ' + data.message, 'error');
+                }
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        // ==========================================
+        // SUPPRIMER UN COURS
+        // ==========================================
+
+        async function supprimerCours(id) {
+            if (!confirm('Supprimer ce cours ?')) return;
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/emploi/${id}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    afficherNotification('✅ Cours supprimé', 'success');
+                    await chargerCours();
+                } else {
+                    afficherNotification('❌ Erreur: ' + data.message, 'error');
+                }
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        // ==========================================
+        // GÉNÉRER LE PLANNING
+        // ==========================================
+
+        async function genererPlanning() {
+            const userId = document.getElementById('userId').value.trim() || utilisateurId;
+            if (!userId) {
+                afficherNotification('⚠️ Veuillez charger un utilisateur d\'abord', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/optimisation/generer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ utilisateur_id: userId })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const nbTaches = data.plan ? data.plan.length : 0;
+                    afficherNotification(`✅ Planning généré avec succès ! ${nbTaches} tâches planifiées`, 'success');
+                    // Rediriger vers la page planning
+                    setTimeout(() => {
+                        window.location.href = 'planning.html';
+                    }, 1500);
+                } else {
+                    afficherNotification('❌ Erreur: ' + data.message, 'error');
+                }
+            } catch (error) {
+                afficherNotification('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        // ==========================================
+        // INITIALISATION
+        // ==========================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Boutons
+            document.getElementById('btnCharger').addEventListener('click', chargerCours);
+            document.getElementById('btnAjouterCours').addEventListener('click', ajouterCours);
+            document.getElementById('btnGenererPlanning').addEventListener('click', genererPlanning);
+
+            // Entrée automatique
+            document.getElementById('userId').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') chargerCours();
+            });
+
+            // Chargement automatique si ID présent
+            if (utilisateurId) {
+                document.getElementById('userId').value = utilisateurId;
+                chargerCours();
+            }
+        });
+    </script>
+</body>
+</html>
