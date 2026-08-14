@@ -24,8 +24,6 @@ class App {
         document.getElementById('btnAjouterTache').addEventListener('click', () => this.ajouterTache());
         document.getElementById('btnCharger').addEventListener('click', () => this.chargerDonnees());
         document.getElementById('btnNouvelUtilisateur').addEventListener('click', () => this.creerUtilisateur());
-        
-        // ✅ Écouteur pour le bouton PDF
         document.getElementById('btnPDF').addEventListener('click', () => this.genererPDF());
 
         document.getElementById('userId').addEventListener('keypress', (e) => {
@@ -68,6 +66,7 @@ class App {
             '<p style="text-align:center;color:#666;">⏳ Chargement en cours...</p>';
         
         try {
+            // ✅ Utiliser ApiClient (qui utilise window.API_BASE)
             const stats = await ApiClient.getStats(userId);
             if (stats.success) {
                 this.afficherStats(stats.stats);
@@ -318,7 +317,7 @@ class App {
             btnPDF.textContent = '⏳ Génération...';
             btnPDF.disabled = true;
 
-            // ✅ Utiliser window.API_BASE au lieu de localhost en dur
+            // ✅ Utiliser window.API_BASE
             const response = await fetch(`${window.API_BASE}/pdf/generer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -328,17 +327,13 @@ class App {
             const data = await response.json();
 
             if (data.success) {
-                // ✅ TÉLÉCHARGEMENT DIRECT
                 const pdfUrl = `${window.API_BASE.replace('/api', '')}${data.pdf.url}`;
-                
-                // Créer un lien de téléchargement
                 const link = document.createElement('a');
                 link.href = pdfUrl;
                 link.download = data.pdf.filename;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                
                 alert('✅ PDF téléchargé avec succès !');
             } else {
                 alert('❌ Erreur: ' + (data.message || 'Erreur inconnue'));
@@ -363,38 +358,20 @@ class App {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('📱 Application démarrée !');
     window.app = new App();
+    mettreAJourMenuConnexion();
 });
-
-// ============================================
-// DÉCONNEXION
-// ============================================
-
-function deconnexion() {
-    if (confirm('Voulez-vous vous déconnecter ?')) {
-        localStorage.removeItem('userId');
-        localStorage.removeItem('userNom');
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('userMatieres');
-        window.location.href = 'login.html';
-    }
-}
-
-// Rendre la fonction disponible globalement
-window.deconnexion = deconnexion;
 
 // ============================================
 // GESTION DE LA CONNEXION / DÉCONNEXION
 // ============================================
 
-// Vérifier l'état de connexion et mettre à jour le menu
 function mettreAJourMenuConnexion() {
     const userId = localStorage.getItem('userId');
-    const btnConnexion = document.querySelector('.btn-connexion');
+    const btnConnexion = document.getElementById('btnConnexion');
     
     if (!btnConnexion) return;
     
     if (userId) {
-        // Utilisateur connecté
         btnConnexion.textContent = '🚪 Déconnexion';
         btnConnexion.onclick = function(e) {
             e.preventDefault();
@@ -408,7 +385,6 @@ function mettreAJourMenuConnexion() {
             }
         };
     } else {
-        // Utilisateur déconnecté
         btnConnexion.textContent = '🔐 Connexion';
         btnConnexion.onclick = function() {
             window.location.href = 'login.html';
@@ -416,12 +392,7 @@ function mettreAJourMenuConnexion() {
     }
 }
 
-// Exécuter au chargement de chaque page
-document.addEventListener('DOMContentLoaded', function() {
-    mettreAJourMenuConnexion();
-});
-
-// Exposer la fonction pour les pages qui ne chargent pas app.js
+window.mettreAJourMenuConnexion = mettreAJourMenuConnexion;
 window.deconnexion = function() {
     if (confirm('Voulez-vous vous déconnecter ?')) {
         localStorage.removeItem('userId');
@@ -432,5 +403,3 @@ window.deconnexion = function() {
         window.location.href = 'login.html';
     }
 };
-
-window.mettreAJourMenuConnexion = mettreAJourMenuConnexion;
