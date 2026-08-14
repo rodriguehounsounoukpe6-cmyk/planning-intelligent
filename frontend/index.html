@@ -497,7 +497,7 @@
             if (e.target === this) fermerModal();
         });
 
-        // Gestion de l'inscription
+        // Gestion de l'inscription avec API_BASE dynamique
         document.getElementById('inscriptionForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -527,7 +527,9 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch('http://localhost:3000/api/auth/register', {
+                // ✅ Utiliser l'URL dynamique de l'API
+                const apiBase = window.API_BASE || 'http://localhost:3000/api';
+                const response = await fetch(`${apiBase}/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
