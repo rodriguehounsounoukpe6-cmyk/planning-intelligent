@@ -440,13 +440,14 @@
             localStorage.setItem('userId', userId);
 
             try {
-                const response = await fetch(`http://localhost:3000/api/auth/user/${userId}`);
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/auth/user/${userId}`);
                 const data = await response.json();
                 if (data.success && data.utilisateur && data.utilisateur.matieres) {
                     matieres = data.utilisateur.matieres;
                 } else {
                     // Essayer d'extraire de l'emploi du temps
-                    const emploiResponse = await fetch(`http://localhost:3000/api/emploi/${userId}`);
+                    const emploiResponse = await fetch(`${window.API_BASE}/emploi/${userId}`);
                     const emploiData = await emploiResponse.json();
                     if (emploiData.success && emploiData.emplois) {
                         const matieresFromEmploi = [...new Set(emploiData.emplois.map(e => e.matiere))];
@@ -469,7 +470,8 @@
 
         async function sauvegarderMatieres() {
             try {
-                await fetch(`http://localhost:3000/api/auth/user/${utilisateurId}`, {
+                // ✅ Utiliser window.API_BASE
+                await fetch(`${window.API_BASE}/auth/user/${utilisateurId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ matieres: matieres })
@@ -563,7 +565,8 @@
                 return;
             }
             try {
-                const response = await fetch(`http://localhost:3000/api/emploi/${userId}`);
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/emploi/${userId}`);
                 const data = await response.json();
                 if (data.success && data.emplois) {
                     const matieresFromEmploi = [...new Set(data.emplois.map(e => e.matiere))];

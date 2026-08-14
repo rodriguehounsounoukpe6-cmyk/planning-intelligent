@@ -101,6 +101,7 @@ app.get('/api', (req, res) => {
         endpoints: {
             auth: {
                 register: 'POST /api/auth/register',
+                login: 'POST /api/auth/login',   // ✅ AJOUTÉ
                 user: 'GET /api/auth/user/:id',
                 update: 'PUT /api/auth/user/:id',
                 delete: 'DELETE /api/auth/user/:id',
@@ -151,6 +152,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log('  GET  /                    - Interface utilisateur');
     console.log('  GET  /api                 - Voir tous les endpoints');
     console.log('  POST /api/auth/register   - Créer un utilisateur');
+    console.log('  POST /api/auth/login      - Connexion');  // ✅ AJOUTÉ
     console.log('  GET  /api/auth/user/:id   - Récupérer un utilisateur');
     console.log('  POST /api/emploi/add      - Ajouter un cours');
     console.log('  GET  /api/emploi/:id      - Voir l\'emploi du temps');

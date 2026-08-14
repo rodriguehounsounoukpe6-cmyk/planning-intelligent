@@ -44,6 +44,92 @@
         .nav-menu .btn-success:hover {
             background: #00a86b;
         }
+        .btn-connexion {
+            background: #e74c3c;
+            border-color: #e74c3c;
+            color: white;
+        }
+        .btn-connexion:hover {
+            background: #c0392b;
+            border-color: #c0392b;
+        }
+
+        /* Hamburger */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 8px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            margin-left: auto;
+        }
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            margin: 3px 0;
+            border-radius: 3px;
+            transition: 0.3s;
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        .nav-menu {
+            transition: all 0.3s ease;
+        }
+        .nav-menu.open {
+            display: flex !important;
+        }
+
+        @media (min-width: 769px) {
+            .nav-menu {
+                display: flex !important;
+            }
+            .hamburger {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                width: 100%;
+                background: rgba(26, 26, 46, 0.95);
+                border-radius: 12px;
+                padding: 15px;
+                margin-top: 10px;
+                gap: 8px;
+            }
+            .nav-menu .btn {
+                width: 100%;
+                text-align: center;
+                padding: 14px 20px;
+                font-size: 15px;
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.1);
+            }
+            .tache-planning {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .week-selector {
+                flex-wrap: wrap;
+            }
+        }
 
         .planning-header {
             display: flex;
@@ -142,7 +228,6 @@
             transform: translateX(5px);
         }
 
-        /* Mode édition */
         .tache-planning.editable {
             cursor: pointer;
             border: 2px dashed transparent;
@@ -211,7 +296,6 @@
             margin-bottom: 15px;
         }
 
-        /* Mode édition - bouton */
         .btn-edition {
             background: linear-gradient(135deg, #fdcb6e, #f39c12);
             color: white;
@@ -304,13 +388,22 @@
             <h1>📅 Mon Planning</h1>
             <p>Votre emploi du temps optimisé et personnalisable</p>
             
-            <!-- MENU DE NAVIGATION -->
-            <div class="nav-menu">
-                <button class="btn" onclick="window.location.href='../index.html'">🏠 Accueil</button>
-                <button class="btn" onclick="window.location.href='emploi.html'">📖 Emploi du temps</button>
-                <button class="btn" onclick="window.location.href='matieres.html'">📚 Mes matières</button>
-                <button class="btn active" onclick="window.location.href='planning.html'">📅 Mon planning</button>
-                <button class="btn" onclick="window.location.href='dashboard.html'">📊 Tableau de bord</button>
+            <!-- MENU DE NAVIGATION AVEC HAMBURGER -->
+            <div style="display:flex; align-items:center; flex-wrap:wrap; width:100%;">
+                <div class="hamburger" onclick="toggleMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="nav-menu" id="navMenu">
+                    <button class="btn" onclick="window.location.href='../index.html'">🏠 Accueil</button>
+                    <button class="btn" onclick="window.location.href='emploi.html'">📖 Emploi du temps</button>
+                    <button class="btn" onclick="window.location.href='matieres.html'">📚 Mes matières</button>
+                    <button class="btn active" onclick="window.location.href='planning.html'">📅 Mon planning</button>
+                    <button class="btn" onclick="window.location.href='dashboard.html'">📊 Tableau de bord</button>
+                    <button class="btn btn-success" onclick="window.location.href='../index.html'">👤 S'inscrire</button>
+                    <button class="btn btn-connexion" id="btnConnexion">🔐 Connexion</button>
+                </div>
             </div>
 
             <div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap;">
@@ -407,7 +500,8 @@
             }
 
             try {
-                const response = await fetch('http://localhost:3000/api/optimisation/generer', {
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/optimisation/generer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ utilisateur_id: userId })
@@ -518,7 +612,8 @@
                 btn.textContent = '⏳ Génération...';
                 btn.disabled = true;
 
-                const response = await fetch('http://localhost:3000/api/optimisation/generer', {
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/optimisation/generer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ utilisateur_id: userId })
@@ -630,7 +725,8 @@
                 btn.textContent = '⏳ Génération...';
                 btn.disabled = true;
 
-                const response = await fetch('http://localhost:3000/api/pdf/generer', {
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/pdf/generer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ utilisateur_id: userId })
@@ -639,8 +735,9 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    // ✅ URL dynamique
                     const link = document.createElement('a');
-                    link.href = `http://localhost:3000${data.pdf.url}`;
+                    link.href = `${window.API_BASE.replace('/api', '')}${data.pdf.url}`;
                     link.download = data.pdf.filename;
                     document.body.appendChild(link);
                     link.click();
@@ -702,11 +799,37 @@
             }
 
             afficherSemaine();
+
+            // Mettre à jour le menu de connexion
+            if (window.mettreAJourMenuConnexion) {
+                window.mettreAJourMenuConnexion();
+            }
         });
 
-        // Bouton "Nouvel utilisateur" dans le menu
-        document.querySelector('.nav-menu .btn-success')?.addEventListener('click', () => {
-            window.location.href = '../index.html';
+        // ==========================================
+        // MENU HAMBURGER
+        // ==========================================
+
+        function toggleMenu() {
+            const navMenu = document.getElementById('navMenu');
+            const hamburger = document.querySelector('.hamburger');
+            if (navMenu) {
+                navMenu.classList.toggle('open');
+                if (hamburger) hamburger.classList.toggle('active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const navMenu = document.getElementById('navMenu');
+            if (navMenu) {
+                navMenu.querySelectorAll('.btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        navMenu.classList.remove('open');
+                        const hamburger = document.querySelector('.hamburger');
+                        if (hamburger) hamburger.classList.remove('active');
+                    });
+                });
+            }
         });
     </script>
 </body>

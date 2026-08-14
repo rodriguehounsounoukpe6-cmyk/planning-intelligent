@@ -46,6 +46,83 @@
             background: #c0392b;
             border-color: #c0392b;
         }
+
+        /* Hamburger */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 8px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            margin-left: auto;
+        }
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            margin: 3px 0;
+            border-radius: 3px;
+            transition: 0.3s;
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        .nav-menu {
+            transition: all 0.3s ease;
+        }
+        .nav-menu.open {
+            display: flex !important;
+        }
+
+        @media (min-width: 769px) {
+            .nav-menu {
+                display: flex !important;
+            }
+            .hamburger {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                width: 100%;
+                background: rgba(26, 26, 46, 0.95);
+                border-radius: 12px;
+                padding: 15px;
+                margin-top: 10px;
+                gap: 8px;
+            }
+            .nav-menu .btn {
+                width: 100%;
+                text-align: center;
+                padding: 14px 20px;
+                font-size: 15px;
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.1);
+            }
+            .dashboard-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+        }
       
         /* Styles spécifiques au dashboard */
         .dashboard-stats {
@@ -179,15 +256,22 @@
             <h1>📊 Tableau de bord</h1>
             <p>Vue d'ensemble de votre progression et planning</p>
             
-            <!-- MENU DE NAVIGATION -->
-            <div class="nav-menu">
-                <button class="btn" onclick="window.location.href='../index.html'">🏠 Accueil</button>
-                <button class="btn" onclick="window.location.href='emploi.html'">📖 Emploi du temps</button>
-                <button class="btn" onclick="window.location.href='matieres.html'">📚 Mes matières</button>
-                <button class="btn" onclick="window.location.href='planning.html'">📅 Mon planning</button>
-                <button class="btn active" onclick="window.location.href='dashboard.html'">📊 Tableau de bord</button>
-                <button class="btn btn-success" onclick="window.location.href='../index.html'">👤 S'inscrire</button>
-                <button class="btn btn-connexion" id="btnConnexion">🔐 Connexion</button>
+            <!-- MENU DE NAVIGATION AVEC HAMBURGER -->
+            <div style="display:flex; align-items:center; flex-wrap:wrap; width:100%;">
+                <div class="hamburger" onclick="toggleMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="nav-menu" id="navMenu">
+                    <button class="btn" onclick="window.location.href='../index.html'">🏠 Accueil</button>
+                    <button class="btn" onclick="window.location.href='emploi.html'">📖 Emploi du temps</button>
+                    <button class="btn" onclick="window.location.href='matieres.html'">📚 Mes matières</button>
+                    <button class="btn" onclick="window.location.href='planning.html'">📅 Mon planning</button>
+                    <button class="btn active" onclick="window.location.href='dashboard.html'">📊 Tableau de bord</button>
+                    <button class="btn btn-success" onclick="window.location.href='../index.html'">👤 S'inscrire</button>
+                    <button class="btn btn-connexion" id="btnConnexion">🔐 Connexion</button>
+                </div>
             </div>
         </div>
 
@@ -280,8 +364,8 @@
             }
 
             try {
-                // Récupérer les statistiques
-                const statsResponse = await fetch(`http://localhost:3000/api/optimisation/stats/${userId}`);
+                // ✅ Utiliser window.API_BASE
+                const statsResponse = await fetch(`${window.API_BASE}/optimisation/stats/${userId}`);
                 const statsData = await statsResponse.json();
 
                 if (statsData.success) {
@@ -299,8 +383,8 @@
                     document.getElementById('progressText').textContent = taux + '%';
                 }
 
-                // Récupérer les tâches récentes
-                const tachesResponse = await fetch(`http://localhost:3000/api/tache/${userId}`);
+                // ✅ Utiliser window.API_BASE
+                const tachesResponse = await fetch(`${window.API_BASE}/tache/${userId}`);
                 const tachesData = await tachesResponse.json();
 
                 if (tachesData.success && tachesData.taches.length > 0) {
@@ -341,7 +425,8 @@
             }
             
             try {
-                const response = await fetch('http://localhost:3000/api/optimisation/generer', {
+                // ✅ Utiliser window.API_BASE
+                const response = await fetch(`${window.API_BASE}/optimisation/generer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ utilisateur_id: userId })
@@ -359,10 +444,27 @@
 
         // Charger au démarrage
         document.addEventListener('DOMContentLoaded', chargerDashboard);
-    </script>
 
-    <script>
+        function toggleMenu() {
+            const navMenu = document.getElementById('navMenu');
+            const hamburger = document.querySelector('.hamburger');
+            if (navMenu) {
+                navMenu.classList.toggle('open');
+                if (hamburger) hamburger.classList.toggle('active');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            const navMenu = document.getElementById('navMenu');
+            if (navMenu) {
+                navMenu.querySelectorAll('.btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        navMenu.classList.remove('open');
+                        const hamburger = document.querySelector('.hamburger');
+                        if (hamburger) hamburger.classList.remove('active');
+                    });
+                });
+            }
             if (window.mettreAJourMenuConnexion) {
                 window.mettreAJourMenuConnexion();
             }
