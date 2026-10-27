@@ -402,7 +402,7 @@
                         };
                         const emoji = emojis[tache.type] || '📌';
                         li.innerHTML = `
-                            <span>${emoji} ${tache.nom}</span>
+                            <span>${emoji} ${escapeHTML(tache.nom)}</span>
                             <span>
                                 <span style="font-size:12px;color:#666;">${tache.duree}min</span>
                                 <span style="margin-left:10px;font-size:12px;">${status}</span>

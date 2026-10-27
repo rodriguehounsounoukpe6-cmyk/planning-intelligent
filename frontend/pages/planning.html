@@ -528,7 +528,7 @@
                     <div class="empty-planning">
                         <span class="emoji">❌</span>
                         <p>Erreur lors du chargement du planning</p>
-                        <small style="color:#b2bec3;">${error.message}</small>
+                        <small style="color:#b2bec3;">${escapeHTML(error.message)}</small>
                     </div>
                 `;
             }
@@ -567,8 +567,8 @@
                                  data-id="${tache.tache_id || tache.id || ''}">
                                 <div class="info">
                                     <span>${emoji}</span>
-                                    <span>${tache.tache}</span>
-                                    <span class="heure">${tache.heure_debut}h - ${tache.heure_fin}h</span>
+                                    <span>${escapeHTML(tache.tache)}</span>
+                                    <span class="heure">${formatHeure(tache.heure_debut)} - ${formatHeure(tache.heure_fin)}</span>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:10px;">
                                     <span class="priorite">⭐ ${tache.priorite}</span>

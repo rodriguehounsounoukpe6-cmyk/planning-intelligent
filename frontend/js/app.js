@@ -117,9 +117,9 @@ class App {
                     for (const e of emploisParJour[jour]) {
                         html += `
                             <div class="tache-item">
-                                <span class="nom">📖 ${e.matiere}</span>
+                                <span class="nom">📖 ${escapeHTML(e.matiere)}</span>
                                 <span class="heure">${e.heure_debut}h - ${e.heure_fin}h</span>
-                                <span class="type">${e.jour}</span>
+                                <span class="type">${escapeHTML(e.jour)}</span>
                             </div>
                         `;
                     }
@@ -141,7 +141,7 @@ class App {
                 const emoji = emojis[t.type] || '📌';
                 html += `
                     <div class="tache-item">
-                        <span class="nom">${emoji} ${t.nom}</span>
+                        <span class="nom">${emoji} ${escapeHTML(t.nom)}</span>
                         <span>⏱️ ${t.duree}min</span>
                         <span class="priorite">⭐ ${t.priorite}</span>
                         <span class="type ${t.type}">${t.type}</span>
@@ -162,7 +162,7 @@ class App {
             if (data.success && data.suggestions && data.suggestions.length > 0) {
                 let html = `<div class="recommandations"><h4>💡 Suggestions personnalisées</h4><ul>`;
                 for (const suggestion of data.suggestions) {
-                    html += `<li>${suggestion.titre}<br><small>${suggestion.description}</small></li>`;
+                    html += `<li>${escapeHTML(suggestion.titre)}<br><small>${escapeHTML(suggestion.description)}</small></li>`;
                 }
                 html += `</ul></div>`;
                 container.innerHTML = html;
@@ -190,7 +190,7 @@ class App {
                         const emoji = emojis[p.type] || '📌';
                         html += `
                             <div class="tache-item">
-                                <span class="nom">${emoji} ${p.tache}</span>
+                                <span class="nom">${emoji} ${escapeHTML(p.tache)}</span>
                                 <span class="heure">${p.heure_debut}h - ${p.heure_fin}h</span>
                                 <span class="priorite">⭐ ${p.priorite}</span>
                                 <span class="type ${p.type}">${p.type}</span>
@@ -208,7 +208,7 @@ class App {
         if (recommandations && recommandations.length > 0) {
             let recHtml = `<div class="recommandations"><h4>💡 Recommandations</h4><ul>`;
             for (const rec of recommandations) {
-                recHtml += `<li>${rec.message}</li>`;
+                recHtml += `<li>${escapeHTML(rec.message)}</li>`;
             }
             recHtml += `</ul></div>`;
             recContainer.innerHTML = recHtml;
@@ -372,9 +372,10 @@ function mettreAJourMenuConnexion() {
     
     if (userId) {
         btnConnexion.textContent = '🚪 Déconnexion';
-        btnConnexion.onclick = function(e) {
+        btnConnexion.onclick = async function(e) {
             e.preventDefault();
             if (confirm('Voulez-vous vous déconnecter ?')) {
+                await ApiClient.logout().catch(() => {});
                 localStorage.removeItem('userId');
                 localStorage.removeItem('userNom');
                 localStorage.removeItem('userEmail');
@@ -392,8 +393,9 @@ function mettreAJourMenuConnexion() {
 }
 
 window.mettreAJourMenuConnexion = mettreAJourMenuConnexion;
-window.deconnexion = function() {
+window.deconnexion = async function() {
     if (confirm('Voulez-vous vous déconnecter ?')) {
+        await ApiClient.logout().catch(() => {});
         localStorage.removeItem('userId');
         localStorage.removeItem('userNom');
         localStorage.removeItem('userEmail');

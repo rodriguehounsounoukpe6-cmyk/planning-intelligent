@@ -340,7 +340,7 @@
                     document.getElementById('tauxCompletion').textContent = (stats.taux_completion || 0) + '%';
 
                     document.getElementById('welcomeMessage').innerHTML = `
-                        <p style="color:#2d3436; font-weight:500;">✅ Bienvenue ${data.utilisateur?.nom || 'Étudiant'} !</p>
+                        <p style="color:#2d3436; font-weight:500;">✅ Bienvenue ${escapeHTML(data.utilisateur?.nom || 'Étudiant')} !</p>
                         <p style="color:#636e72; font-size:14px;">Vous avez ${stats.total_taches || 0} tâches à gérer</p>
                     `;
                     afficherNotification('✅ Données chargées avec succès !', 'success');

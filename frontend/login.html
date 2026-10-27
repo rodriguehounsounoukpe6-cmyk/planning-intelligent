@@ -153,7 +153,7 @@
             event.preventDefault();
 
             const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
+            const password = document.getElementById('password').value;
             const btn = document.getElementById('btnLogin');
 
             if (!email || !password) {
@@ -216,7 +216,8 @@
         }
 
         if (localStorage.getItem('userId')) {
-            window.location.href = 'dashboard.html';
+            ApiClient.moi().then(() => { window.location.href='dashboard.html'; })
+                .catch(() => localStorage.removeItem('userId'));
         }
     </script>
 </body>

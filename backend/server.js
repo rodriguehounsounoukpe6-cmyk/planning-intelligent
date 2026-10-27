@@ -1,166 +1,55 @@
+require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
-
-// ✅ AJOUT : Import du service PDF
+const fs = require('node:fs');
+const path = require('node:path');
+const { read } = require('./lib/store');
+const { authenticate, bodySelf } = require('./middleware/auth');
 const PDFGenerator = require('./services/PDFGenerator');
-
+const Planificateur = require('./services/Planificateur');
 const app = express();
-const PORT = process.env.PORT || 3000; // ✅ RENDER : Utilise le port dynamique
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Servir le frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Routes API
-const authRoutes = require('./routes/auth');
-const emploiRoutes = require('./routes/emploi');
-const optimisationRoutes = require('./routes/optimisation');
-const tacheRoutes = require('./routes/tache');
-
-app.use('/api/auth', authRoutes);
-app.use('/api/emploi', emploiRoutes);
-app.use('/api/optimisation', optimisationRoutes);
-app.use('/api/tache', tacheRoutes);
-
-// ============================================
-// ✅ Route pour générer le PDF
-// ============================================
-app.post('/api/pdf/generer', async (req, res) => {
-    try {
-        const { utilisateur_id } = req.body;
-        
-        // Lire les données
-        const donnees = JSON.parse(fs.readFileSync(path.join(__dirname, 'data.json'), 'utf8'));
-        const utilisateur = donnees.utilisateurs.find(u => u.id === utilisateur_id);
-        
-        if (!utilisateur) {
-            return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
-        }
-
-        // Récupérer les cours et tâches
-        const emplois = donnees.emplois.filter(e => e.utilisateur_id === utilisateur_id);
-        const taches = donnees.taches.filter(t => t.utilisateur_id === utilisateur_id);
-
-        // Générer le planning optimisé
-        const Planificateur = require('./services/Planificateur');
-        const planificateur = new Planificateur(utilisateur_id);
-        const plan = planificateur.optimiserTaches();
-
-        // Générer le PDF
-        const result = await PDFGenerator.genererPlanningPDF(
-            utilisateur,
-            plan,
-            emplois,
-            taches
-        );
-
-        res.json({
-            success: true,
-            message: '✅ PDF généré avec succès !',
-            pdf: result
-        });
-
-    } catch (error) {
-        console.error('❌ Erreur génération PDF:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la génération du PDF',
-            error: error.message
-        });
+const PORT = process.env.PORT || 3000;
+app.disable('x-powered-by');
+app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);
+app.use((req,res,next) => {
+  res.setHeader('X-Content-Type-Options','nosniff');
+  res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');
+  res.setHeader('X-Frame-Options','DENY');
+  res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'");
+  if (req.path.startsWith('/api/') || req.path.startsWith('/pdfs/')) res.setHeader('Cache-Control','no-store');
+  // Défense supplémentaire CSRF : refuser une origine étrangère sur les opérations sensibles.
+  if (['POST','PUT','PATCH','DELETE'].includes(req.method)) {
+    const origin=req.get('origin');
+    if (origin) {
+      try {if (new URL(origin).host !== req.get('host')) return res.status(403).json({success:false,message:'Origine non autorisée'});} catch(_) {return res.status(403).json({success:false,message:'Origine non autorisée'});}
     }
+    if (req.path.startsWith('/api/') && req.get('content-type') && !req.is('application/json')) return res.status(415).json({success:false,message:'JSON requis'});
+  }
+  next();
 });
-
-// ============================================
-// ✅ Route pour télécharger le PDF
-// ============================================
-app.get('/pdfs/:filename', (req, res) => {
-    const filepath = path.join(__dirname, 'pdfs', req.params.filename);
-    if (fs.existsSync(filepath)) {
-        res.download(filepath);
-    } else {
-        res.status(404).json({ success: false, message: 'Fichier non trouvé' });
-    }
+app.use(express.json({limit:'128kb'}));
+app.use(express.static(path.join(__dirname,'../frontend'), {extensions:['html'], index:'index.html'}));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/emploi', authenticate, require('./routes/emploi'));
+app.use('/api/tache', authenticate, require('./routes/tache'));
+app.use('/api/optimisation',authenticate,require('./routes/optimisation'));
+app.post('/api/pdf/generer', authenticate,bodySelf, async(req,res) => {
+  try {
+    const data=read();const user=data.utilisateurs.find(u=>u.id===req.userId);
+    if (!user) return res.status(404).json({success:false,message:'Utilisateur non trouvé'});
+    const pdf=await PDFGenerator.genererPlanningPDF(user,new Planificateur(req.userId).optimiserTaches(),data.emplois.filter(e=>e.utilisateur_id===req.userId),data.taches.filter(t=>t.utilisateur_id===req.userId));
+    return res.json({success:true,message:'PDF généré',pdf:{filename:pdf.filename,url:pdf.url}});
+  } catch(err) {console.error('Erreur génération PDF',err);return res.status(500).json({success:false,message:'Erreur lors de la génération du PDF'});}
 });
-
-// Route par défaut
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+app.get('/pdfs/:filename',authenticate,(req,res)=> {
+  const filename=req.params.filename;
+  // Chaque fichier PDF doit appartenir à la session courante.
+  if (!/^planning_premium_[\w-]+_\d+\.pdf$/.test(filename) || !filename.startsWith(`planning_premium_${req.userId}_`)) return res.status(404).json({success:false,message:'Fichier non trouvé'});
+  const full=path.join(__dirname,'pdfs',filename);
+  return res.download(full,filename,err=>{if(err && !res.headersSent)res.status(404).json({success:false,message:'Fichier non trouvé'});});
 });
-
-// Route API
-app.get('/api', (req, res) => {
-    res.json({
-        success: true,
-        message: 'Bienvenue sur l\'API de Planning Intelligent !',
-        version: '1.0.0',
-        endpoints: {
-            auth: {
-                register: 'POST /api/auth/register',
-                login: 'POST /api/auth/login',   // ✅ AJOUTÉ
-                user: 'GET /api/auth/user/:id',
-                update: 'PUT /api/auth/user/:id',
-                delete: 'DELETE /api/auth/user/:id',
-                users: 'GET /api/auth/users'
-            },
-            emploi: {
-                add: 'POST /api/emploi/add',
-                get: 'GET /api/emploi/:utilisateur_id',
-                getDay: 'GET /api/emploi/:utilisateur_id/:jour',
-                update: 'PUT /api/emploi/:id',
-                delete: 'DELETE /api/emploi/:id'
-            },
-            optimisation: {
-                generate: 'POST /api/optimisation/generer',
-                stats: 'GET /api/optimisation/stats/:utilisateur_id',
-                suggestions: 'POST /api/optimisation/suggestions'
-            },
-            pdf: {
-                generate: 'POST /api/pdf/generer',
-                download: 'GET /pdfs/:filename'
-            }
-        },
-        documentation: 'Consultez le README.md pour plus d\'informations'
-    });
-});
-
-// Gestion des erreurs 404
-app.use((req, res) => {
-    res.status(404).json({ 
-        success: false, 
-        message: 'Route non trouvée',
-        help: 'Allez sur / pour l\'interface ou /api pour les endpoints'
-    });
-});
-
-// ============================================
-// ✅ DÉMARRER LE SERVEUR SUR LE PORT DYNAMIQUE
-// ============================================
-app.listen(PORT, '0.0.0.0', () => {
-    console.log('========================================');
-    console.log('🚀 SERVEUR DÉMARRÉ AVEC SUCCÈS !');
-    console.log('========================================');
-    console.log(`📍 URL: http://0.0.0.0:${PORT}`);
-    console.log(`📁 Données: ${path.join(__dirname, 'data.json')}`);
-    console.log('📊 Status: En ligne');
-    console.log('========================================');
-    console.log('📚 Endpoints disponibles:');
-    console.log('  GET  /                    - Interface utilisateur');
-    console.log('  GET  /api                 - Voir tous les endpoints');
-    console.log('  POST /api/auth/register   - Créer un utilisateur');
-    console.log('  POST /api/auth/login      - Connexion');  // ✅ AJOUTÉ
-    console.log('  GET  /api/auth/user/:id   - Récupérer un utilisateur');
-    console.log('  POST /api/emploi/add      - Ajouter un cours');
-    console.log('  GET  /api/emploi/:id      - Voir l\'emploi du temps');
-    console.log('  POST /api/optimisation/generer - Optimiser le planning');
-    console.log('  POST /api/tache/add       - Ajouter une tâche');
-    console.log('  GET  /api/tache/:id       - Voir les tâches');
-    console.log('  POST /api/pdf/generer     - Générer le PDF');
-    console.log('  GET  /pdfs/:filename      - Télécharger le PDF');
-    console.log('========================================');
-    console.log('💡 Appuyez sur Ctrl+C pour arrêter le serveur');
-});
+app.get('/api',(req,res)=>res.json({success:true,version:'2.0.0',message:'Planning Intelligent API'}));
+app.get('/api/health',(req,res)=>res.json({success:true,status:'ok'}));
+app.get('/',(req,res)=>res.sendFile(path.join(__dirname,'../frontend/index.html')));
+app.use((req,res)=>res.status(404).json({success:false,message:'Route non trouvée'}));
+if (require.main===module) app.listen(PORT,'0.0.0.0',()=>console.log(`Planning Intelligent V2 : http://localhost:${PORT}`));
+module.exports=app;

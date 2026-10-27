@@ -3,22 +3,12 @@
 // ============================================
 
 // 🔥 Détection automatique de l'API (fonctionne sur localhost, réseau local et Render)
-const getApiBase = () => {
-    const hostname = window.location.hostname;
-    const port = window.location.port || '3000';
-    
-    // ✅ Si on est sur Render (FORCÉ)
-    if (hostname === 'planning-intelligent.onrender.com' || hostname.includes('onrender.com')) {
-        return 'https://planning-intelligent.onrender.com/api';
-    }
-    
-    // ✅ Si on est sur localhost (ordinateur)
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return `http://localhost:${port}/api`;
-    }
-    
-    // ✅ Si on est sur le réseau local (téléphone, autre ordi)
-    return `http://${hostname}:${port}/api`;
+const getApiBase = () => `${window.location.origin}/api`;
+// La session est gérée par un cookie HttpOnly, non accessible en JavaScript.
+window.escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+window.formatHeure = (decimal) => {
+    const mins = Math.round(Number(decimal) * 60);
+    return `${String(Math.floor(mins/60)).padStart(2,'0')}h${String(mins%60).padStart(2,'0')}`;
 };
 
 const API_BASE = getApiBase();
@@ -40,6 +30,7 @@ class ApiClient {
     static async request(endpoint, options = {}) {
         const url = `${API_BASE}${endpoint}`;
         const config = {
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -54,16 +45,17 @@ class ApiClient {
         }
 
         try {
-            console.log(`📡 Requête: ${options.method || 'GET'} ${url}`);
             const response = await fetch(url, config);
             const data = await response.json();
             
             if (!response.ok) {
-                console.error('❌ Erreur API:', data);
+                if (response.status === 401 && !endpoint.startsWith('/auth/login')) {
+                    localStorage.removeItem('userId');
+                    window.location.assign('/login.html');
+                }
                 throw new Error(data.message || `Erreur ${response.status}`);
             }
             
-            console.log('✅ Réponse reçue:', data);
             return data;
         } catch (error) {
             console.error('❌ Erreur réseau:', error);
@@ -136,6 +128,10 @@ class ApiClient {
      * @param {string} password - Mot de passe
      * @returns {Promise} Données de l'utilisateur connecté
      */
+    static async logout() { return this.request('/auth/logout', {method: 'POST', body: {}}); }
+
+    static async moi() { return this.request('/auth/me'); }
+
     static async login(email, password) {
         return this.request('/auth/login', {
             method: 'POST',

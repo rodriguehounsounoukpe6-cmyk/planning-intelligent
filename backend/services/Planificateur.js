@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { read } = require('../lib/store');
 
 const DATA_FILE = path.join(__dirname, '../data.json');
 
@@ -41,13 +42,13 @@ const TEMPS_DEFAUT = 1.5;
 class PlanificateurIntelligent {
     constructor(utilisateurId) {
         this.utilisateurId = utilisateurId;
-        this.donnees = this.lireDonnees();
+        this.donnees = read();
         this.utilisateur = this.donnees.utilisateurs.find(u => u.id === utilisateurId);
         this.emplois = this.donnees.emplois.filter(e => e.utilisateur_id === utilisateurId);
         this.taches = this.donnees.taches.filter(t => t.utilisateur_id === utilisateurId);
         
         // Extraire les matières uniques de l'emploi du temps
-        this.matieres = [...new Set(this.emplois.map(e => e.matiere.toLowerCase()))];
+        this.matieres = [...new Set(this.emplois.map(e => String(e.matiere).toLowerCase()))];
     }
 
     lireDonnees() {
@@ -262,96 +263,63 @@ class PlanificateurIntelligent {
     }
 
     // ==========================================
-    // OPTIMISATION PRINCIPALE
+    // OPTIMISATION V2 : contraintes en minutes, priorités d'abord
     // ==========================================
     optimiserTaches() {
-        const plan = [];
-        const jours = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
-        
-        const pref = this.utilisateur ? this.utilisateur.preferences : {};
+        const jours = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
+        const pref = this.utilisateur?.preferences || {};
         const momentOptimal = pref.moment_optimal || 'matin';
-        
-        // Séparer les tâches
-        const tachesEtude = this.taches.filter(t => t.type === 'etude' && !t.terminee);
-        const tachesDomestiques = this.taches.filter(t => t.type === 'domestique' && !t.terminee);
-        const tachesPersonnelles = this.taches.filter(t => t.type === 'personnel' && !t.terminee);
-        
-        tachesEtude.sort((a, b) => b.priorite - a.priorite);
-        tachesDomestiques.sort((a, b) => b.priorite - a.priorite);
-        tachesPersonnelles.sort((a, b) => b.priorite - a.priorite);
-        
-        const tachesTriees = [...tachesEtude, ...tachesDomestiques, ...tachesPersonnelles];
-        
-        // Traiter chaque jour
-        for (const jour of jours) {
-            const plages = this.trouverPlagesLibres(jour);
-            let plagesDisponibles = plages.map(p => ({ ...p }));
-            
-            const aDesCours = this.emplois.some(e => e.jour === jour);
-            
-            // Si pas de cours OU temps libre suffisant, ajouter des sessions d'étude
-            const tempsTotalDisponible = plagesDisponibles.reduce((sum, p) => sum + p.duree, 0);
-            
-            // Générer des sessions d'étude (même les jours avec cours s'il y a assez de temps)
-            if (tempsTotalDisponible >= 1) {
-                // Ne générer des sessions que si on a au moins 2h de libre
-                const sessions = this.genererSessionsEtude(jour, plagesDisponibles);
-                plan.push(...sessions);
+        const pauses = pref.pauses !== false;
+        const dureeSession = Math.max(20, Math.min(90, Number(pref.duree_session) || 45));
+        const limiteMin = 180; // Maximum 3 h de travail ajouté par jour, pour préserver du repos.
+        const plan = [];
+        this.nonPlacees = [];
+        const matieres = this.matieres;
+        for (let jourIndex=0; jourIndex<jours.length; jourIndex++) {
+            const jour = jours[jourIndex];
+            const occupations = this.emplois.filter(c => c.jour === jour).map(c => [Math.round(c.heure_debut*60),Math.round(c.heure_fin*60)]);
+            occupations.push([12*60,14*60]); // pause déjeuner
+            let placeesMin = 0;
+            const taches = this.taches.filter(t => !t.terminee && Array.isArray(t.jours) && t.jours.includes(jour))
+                .sort((a,b) => Number(b.priorite)-Number(a.priorite) || (a.type==='etude'?-1:1) || String(a.date_creation).localeCompare(String(b.date_creation)));
+            const creerPlages = () => {
+                const occ = occupations.slice().sort((a,b)=>a[0]-b[0]);
+                const libres=[];let position=7*60;
+                for (const [debut,fin] of occ) {
+                    if (debut>position) libres.push([position,Math.min(debut,22*60)]);
+                    position=Math.max(position,fin);
+                }
+                if (position<22*60) libres.push([position,22*60]);
+                return libres.filter(([a,b])=>b>a);
+            };
+            const inserer = (label, duree, meta) => {
+                if (!Number.isFinite(duree) || duree<1 || placeesMin+duree>limiteMin) return false;
+                const possible = creerPlages().filter(([a,b]) => b-a>=duree+(pauses?10:0));
+                // Une petite plage en fin de journée peut aussi accepter une tâche sans pause.
+                if (!possible.length) possible.push(...creerPlages().filter(([a,b])=>b-a>=duree));
+                if (!possible.length) return false;
+                possible.sort((a,b)=>this._evaluerPlage({debut:a[0]/60,duree:(a[1]-a[0])/60},momentOptimal)-this._evaluerPlage({debut:b[0]/60,duree:(b[1]-b[0])/60},momentOptimal));
+                const [debut,fin] = possible[possible.length-1];
+                const finSession=debut+duree;
+                occupations.push([debut,Math.min(fin,finSession+(pauses?10:0))]);
+                placeesMin+=duree;
+                plan.push({jour,tache:label,heure_debut:Number((debut/60).toFixed(4)),heure_fin:Number((finSession/60).toFixed(4)),duree,...meta});
+                return true;
+            };
+            for (const t of taches) {
+                const ok=inserer(t.nom,Number(t.duree),{tache_id:t.id,priorite:t.priorite,type:t.type,moment:momentOptimal,automatique:false});
+                if (!ok) this.nonPlacees.push({jour,tache_id:t.id,nom:t.nom,raison:'Temps disponible insuffisant'});
             }
-            
-            // Placer les tâches de l'utilisateur
-            const tachesJour = tachesTriees.filter(t => t.jours && t.jours.includes(jour));
-            
-            for (const tache of tachesJour) {
-                const dureeEnHeures = tache.duree / 60;
-                
-                let meilleurePlage = null;
-                let meilleurScore = -1;
-                
-                for (let i = 0; i < plagesDisponibles.length; i++) {
-                    const plage = plagesDisponibles[i];
-                    if (plage.duree >= dureeEnHeures) {
-                        const score = this._evaluerPlage(plage, momentOptimal);
-                        if (score > meilleurScore) {
-                            meilleurScore = score;
-                            meilleurePlage = i;
-                        }
-                    }
-                }
-                
-                if (meilleurePlage !== null) {
-                    const plage = plagesDisponibles[meilleurePlage];
-                    const heureDebut = Math.round(plage.debut * 10) / 10;
-                    const heureFin = Math.round((plage.debut + dureeEnHeures) * 10) / 10;
-                    
-                    plan.push({
-                        jour: jour,
-                        tache: tache.nom,
-                        tache_id: tache.id,
-                        heure_debut: heureDebut,
-                        heure_fin: heureFin,
-                        duree: tache.duree,
-                        priorite: tache.priorite,
-                        type: tache.type || 'domestique',
-                        moment: this._determinerMoment(heureDebut)
-                    });
-                    
-                    plage.debut += dureeEnHeures;
-                    plage.duree -= dureeEnHeures;
-                }
+            // Les révisions proposées viennent APRES les obligations choisies par l'élève.
+            // Pas de révision automatique le dimanche (repos) ou sans cours/matières.
+            if (jour!=='dimanche' && matieres.length && placeesMin+dureeSession<=limiteMin) {
+                const matiere = matieres[jourIndex % matieres.length];
+                inserer(`📚 Révision : ${matiere.charAt(0).toUpperCase()+matiere.slice(1)}`,dureeSession,
+                    {priorite:2,type:'etude',matiere,automatique:true});
             }
         }
-        
-        // Trier le plan
-        const ordreJours = { lundi: 0, mardi: 1, mercredi: 2, jeudi: 3, vendredi: 4, samedi: 5, dimanche: 6 };
-        plan.sort((a, b) => {
-            if (ordreJours[a.jour] !== ordreJours[b.jour]) {
-                return ordreJours[a.jour] - ordreJours[b.jour];
-            }
-            return a.heure_debut - b.heure_debut;
-        });
-        
-        return plan;
+        const ordre = Object.fromEntries(jours.map((j,i)=>[j,i]));
+        return plan.sort((a,b)=>ordre[a.jour]-ordre[b.jour] || a.heure_debut-b.heure_debut);
     }
 
     // ==========================================

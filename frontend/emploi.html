@@ -343,7 +343,7 @@
                                     html += `
                                         <div class="cours-item">
                                             <div class="info">
-                                                <span class="matiere">📖 ${cours.matiere}</span>
+                                                <span class="matiere">📖 ${escapeHTML(cours.matiere)}</span>
                                                 <span style="color:#636e72;font-size:13px;">${cours.heure_debut}h - ${cours.heure_fin}h</span>
                                             </div>
                                             <button class="delete-btn" onclick="supprimerCours('${cours.id}')">✕</button>

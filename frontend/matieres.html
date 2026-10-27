@@ -499,7 +499,7 @@
                 return;
             }
             let html = '';
-            for (const matiere of matieres) {
+            for (const [matiereIndex, matiere] of matieres.entries()) {
                 const niveauClass = `niveau-${matiere.niveau || 'moyen'}`;
                 const niveauLabel = {
                     facile: '🟢 Facile',
@@ -509,17 +509,20 @@
                 html += `
                     <div class="matiere-item">
                         <div class="info">
-                            <span class="nom">📖 ${matiere.nom}</span>
+                            <span class="nom">📖 ${escapeHTML(matiere.nom)}</span>
                             <span class="niveau ${niveauClass}">${niveauLabel}</span>
                         </div>
                         <div style="display:flex; align-items:center; gap:15px;">
                             <span class="temps">⏱️ ${matiere.temps || 2}h/sem</span>
-                            <button class="delete-btn" onclick="supprimerMatiere('${matiere.nom}')">✕</button>
+                            <button class="delete-btn" data-supprimer-index="${matiereIndex}">✕</button>
                         </div>
                     </div>
                 `;
             }
             container.innerHTML = html;
+            container.querySelectorAll('[data-supprimer-index]').forEach(button => {
+                button.addEventListener('click', () => supprimerMatiere(matieres[Number(button.dataset.supprimerIndex)].nom));
+            });
         }
 
         async function ajouterMatiere() {

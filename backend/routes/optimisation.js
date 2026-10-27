@@ -6,11 +6,12 @@
 const express = require('express');
 const router = express.Router();
 const PlanificateurIntelligent = require('../services/Planificateur');
+const {bodySelf, paramSelf} = require('../middleware/auth');
 
 // ============================================
 // ROUTE : Générer le planning optimisé
 // ============================================
-router.post('/generer', (req, res) => {
+router.post('/generer', bodySelf, (req, res) => {
     try {
         const { utilisateur_id } = req.body;
         
@@ -44,6 +45,7 @@ router.post('/generer', (req, res) => {
             success: true,
             message: '✅ Planning optimisé généré avec succès',
             plan: plan,
+            non_placees: planificateur.nonPlacees || [],
             analyse: analyse,
             recommandations: recommandations,
             stats: stats,
@@ -59,7 +61,6 @@ router.post('/generer', (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erreur lors de la génération du planning optimisé',
-            error: error.message
         });
     }
 });
@@ -67,7 +68,7 @@ router.post('/generer', (req, res) => {
 // ============================================
 // ROUTE : Récupérer les statistiques
 // ============================================
-router.get('/stats/:utilisateur_id', (req, res) => {
+router.get('/stats/:utilisateur_id', paramSelf, (req, res) => {
     try {
         const { utilisateur_id } = req.params;
         
@@ -104,7 +105,6 @@ router.get('/stats/:utilisateur_id', (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erreur lors de la récupération des statistiques',
-            error: error.message
         });
     }
 });
@@ -112,7 +112,7 @@ router.get('/stats/:utilisateur_id', (req, res) => {
 // ============================================
 // ROUTE : Obtenir des suggestions d'amélioration
 // ============================================
-router.post('/suggestions', (req, res) => {
+router.post('/suggestions', bodySelf, (req, res) => {
     try {
         const { utilisateur_id } = req.body;
         
@@ -139,7 +139,6 @@ router.post('/suggestions', (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erreur lors de la génération des suggestions',
-            error: error.message
         });
     }
 });

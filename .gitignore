@@ -39,3 +39,6 @@ build/
 # OS
 *.tmp
 *.temp
+# PDF personnels générés pendant les tests et en production
+backend/pdfs/*.pdf
+!backend/pdfs/.gitkeep

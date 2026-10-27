@@ -46,6 +46,7 @@ const TYPE_META = {
 };
 
 const PAGE_MARGIN = 50;
+const heureLisible = (h) => { const m = Math.round(Number(h)*60); return `${String(Math.floor(m/60)).padStart(2,'0')}h${String(m%60).padStart(2,'0')}`; };
 
 // ==========================================
 // NETTOYAGE DU TEXTE (anti-caracteres bizarres)
@@ -372,7 +373,7 @@ class PDFGenerator {
                 doc.fillColor(COLORS.dark).font('Helvetica').fontSize(10.5)
                    .text(nettoyerTexte(cours.matiere), 150, yPos + 6, { width: 260 });
                 doc.font('Helvetica-Bold').fontSize(10).fillColor(COLORS.primary)
-                   .text(`${cours.heure_debut}h - ${cours.heure_fin}h`, doc.page.width - 170, yPos + 6, {
+                   .text(`${heureLisible(cours.heure_debut)} - ${heureLisible(cours.heure_fin)}`, doc.page.width - 170, yPos + 6, {
                        width: 110, align: 'right'
                    });
                 yPos += 26;
@@ -391,7 +392,7 @@ class PDFGenerator {
 
                 const horaireX = doc.page.width - 170;
                 doc.font('Helvetica-Bold').fontSize(10).fillColor(meta.color)
-                   .text(`${tache.heure_debut}h - ${tache.heure_fin}h`, horaireX, yPos + 6, {
+                   .text(`${heureLisible(tache.heure_debut)} - ${heureLisible(tache.heure_fin)}`, horaireX, yPos + 6, {
                        width: 75, align: 'right'
                    });
                 this._iconeEtoile(doc, horaireX + 85, yPos + 11, COLORS.gold, 5);

@@ -40,7 +40,7 @@ class User {
             nom: this.nom,
             classe: this.classe,
             email: this.email,
-            password: this.password, // ✅ AJOUTÉ !!!
+            password: this.password, // Conservé dans le stockage serveur uniquement (jamais dans les réponses API).
             serie: this.serie,
             preferences: this.preferences,
             matieres: this.matieres,

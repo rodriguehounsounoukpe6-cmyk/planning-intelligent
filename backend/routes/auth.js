@@ -1,302 +1,100 @@
-// ============================================
-// ROUTES D'AUTHENTIFICATION
-// Gère la création et la récupération des utilisateurs
-// ============================================
-
 const express = require('express');
-const router = express.Router();
-const fs = require('fs');
-const path = require('path');
+const bcrypt = require('bcryptjs');
+const { randomUUID } = require('node:crypto');
 const User = require('../models/User');
-const bcrypt = require('bcryptjs'); // ✅ Ajouté pour la vérification
-
-// Chemin du fichier de données
-const DATA_FILE = path.join(__dirname, '../data.json');
-
-/**
- * Fonction pour lire les données depuis le fichier JSON
- * @returns {object} Données du fichier
- */
-function lireDonnees() {
-    // Si le fichier n'existe pas, créer un fichier vide
-    if (!fs.existsSync(DATA_FILE)) {
-        const dataVide = {
-            utilisateurs: [],
-            emplois: [],
-            taches: []
-        };
-        fs.writeFileSync(DATA_FILE, JSON.stringify(dataVide, null, 2));
-        return dataVide;
-    }
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+const { read, write } = require('../lib/store');
+const { text, number, handleError } = require('../lib/validation');
+const { authenticate, createSession, clearSession, selfId } = require('../middleware/auth');
+const router = express.Router();
+const publicUser = (u) => { const { password, ...safe } = u; return safe; };
+const attempts = new Map();
+function throttle(req, res, next) {
+  const ip = req.ip;
+  const now = Date.now();
+  if (attempts.size > 5000) attempts.clear();
+  const state = attempts.get(ip) || { count:0, reset:now + 60000 };
+  if (state.reset < now) { state.count = 0; state.reset = now + 60000; }
+  state.count += 1;
+  attempts.set(ip, state);
+  if (state.count > 12) return res.status(429).json({success:false,message:'Trop de tentatives. Réessayez dans une minute.'});
+  next();
 }
-
-/**
- * Fonction pour écrire les données dans le fichier JSON
- * @param {object} donnees - Données à écrire
- */
-function ecrireDonnees(donnees) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(donnees, null, 2));
-}
-
-// ============================================
-// ROUTE : Créer un nouvel utilisateur
-// ============================================
-router.post('/register', (req, res) => {
-    try {
-        const donnees = lireDonnees();
-        const { nom, classe, email, password, serie, preferences } = req.body;
-        
-        // Validation des données
-        if (!nom || nom.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                message: '❌ Le nom est requis'
-            });
-        }
-
-        if (!email) {
-            return res.status(400).json({
-                success: false,
-                message: '❌ L\'email est requis'
-            });
-        }
-
-        // Vérifier si l'email existe déjà
-        const emailExists = donnees.utilisateurs.some(u => u.email === email);
-        if (emailExists) {
-            return res.status(400).json({
-                success: false,
-                message: '❌ Cet email est déjà utilisé'
-            });
-        }
-
-        if (!password || password.length < 6) {
-            return res.status(400).json({
-                success: false,
-                message: '❌ Le mot de passe doit contenir au moins 6 caractères'
-            });
-        }
-        
-        // Créer un nouvel utilisateur
-        const userId = Date.now().toString();
-        const user = new User(
-            userId,
-            nom.trim(),
-            classe || 'Non spécifié',
-            email,
-            password,
-            { 
-                ...preferences, 
-                serie: serie || '',
-                matieres: preferences?.matieres || []
-            }
-        );
-        
-        // Ajouter à la base de données
-        const userData = user.toJSON();
-        donnees.utilisateurs.push(userData);
-        ecrireDonnees(donnees);
-        
-        // Réponse de succès
-        res.status(201).json({
-            success: true,
-            message: '✅ Utilisateur créé avec succès',
-            utilisateur: userData,
-            conseil: '📝 Notez votre ID pour vous reconnecter plus tard'
-        });
-        
-    } catch (error) {
-        console.error('❌ Erreur création utilisateur:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la création de l\'utilisateur',
-            error: error.message
-        });
-    }
+router.post('/register', throttle, (req,res) => {
+  try {
+    const { classe, password, serie, preferences = {} } = req.body;
+    const nom = text(req.body.nom,'Nom',100);
+    const email = text(req.body.email, 'Email',254).toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({success:false,message:'Email invalide'});
+    if (typeof password !== 'string' || password.length < 8 || password.length > 128) return res.status(400).json({success:false,message:'Le mot de passe doit contenir entre 8 et 128 caractères'});
+    if (!preferences || typeof preferences !== 'object' || Array.isArray(preferences)) return res.status(400).json({success:false,message:'Préférences invalides'});
+    const data = read();
+    if (data.utilisateurs.some(u => String(u.email).toLowerCase() === email)) return res.status(409).json({success:false,message:'Cet email est déjà utilisé'});
+    const cleanPref = {
+      moment_optimal: ['matin','apres-midi','soir'].includes(preferences.moment_optimal) ? preferences.moment_optimal : 'matin',
+      duree_session: number(preferences.duree_session ?? 45,'Durée',20,90),
+      pauses: preferences.pauses !== false,
+      matieres: Array.isArray(preferences.matieres) ? preferences.matieres.slice(0,30).filter(m => m && typeof m.nom === 'string').map(m => ({ nom: text(m.nom,'Matière',100), niveau: ['faible','moyen','eleve'].includes(m.niveau) ? m.niveau : 'moyen' })) : []
+    };
+    const user = new User(randomUUID(), nom, String(classe || 'Non spécifié').slice(0,100), email, password, {...cleanPref, serie: String(serie || '').slice(0,60)});
+    const serialized = user.toJSON();
+    data.utilisateurs.push(serialized);
+    write(data);
+    createSession(req,res,user.id);
+    return res.status(201).json({success:true,message:'Compte créé',utilisateur:publicUser(serialized)});
+  } catch(err) { return handleError(err,res); }
 });
-
-// ============================================
-// ROUTE : Mettre à jour un utilisateur
-// ============================================
-router.put('/user/:id', (req, res) => {
-    try {
-        const donnees = lireDonnees();
-        const userId = req.params.id;
-        const { nom, classe, preferences } = req.body;
-        
-        // Chercher l'utilisateur
-        const userIndex = donnees.utilisateurs.findIndex(u => u.id === userId);
-        
-        if (userIndex === -1) {
-            return res.status(404).json({
-                success: false,
-                message: '❌ Utilisateur non trouvé'
-            });
-        }
-        
-        // Mettre à jour les données
-        const user = donnees.utilisateurs[userIndex];
-        if (nom) user.nom = nom.trim();
-        if (classe) user.classe = classe;
-        if (preferences) {
-            user.preferences = {
-                ...user.preferences,
-                ...preferences
-            };
-        }
-        
-        donnees.utilisateurs[userIndex] = user;
-        ecrireDonnees(donnees);
-        
-        res.json({
-            success: true,
-            message: '✅ Utilisateur mis à jour avec succès',
-            utilisateur: user
-        });
-        
-    } catch (error) {
-        console.error('❌ Erreur mise à jour utilisateur:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la mise à jour de l\'utilisateur',
-            error: error.message
-        });
-    }
+router.post('/login', throttle, (req,res) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const password = req.body.password;
+    if (!email || typeof password !== 'string') return res.status(400).json({success:false,message:'Email et mot de passe requis'});
+    const data=read();
+    const user=data.utilisateurs.find(u => String(u.email).toLowerCase() === email);
+    if (!user || !user.password || !bcrypt.compareSync(password,user.password)) return res.status(401).json({success:false,message:'Email ou mot de passe incorrect'});
+    user.derniere_connexion=new Date().toISOString();
+    write(data); createSession(req,res,user.id);
+    return res.json({success:true,message:'Connexion réussie',utilisateur:publicUser(user)});
+  } catch(err) { return handleError(err,res); }
 });
-
-// ============================================
-// ROUTE : Supprimer un utilisateur
-// ============================================
-router.delete('/user/:id', (req, res) => {
-    try {
-        const donnees = lireDonnees();
-        const userId = req.params.id;
-        
-        // Vérifier si l'utilisateur existe
-        const userExists = donnees.utilisateurs.some(u => u.id === userId);
-        if (!userExists) {
-            return res.status(404).json({
-                success: false,
-                message: '❌ Utilisateur non trouvé'
-            });
-        }
-        
-        // Supprimer l'utilisateur et toutes ses données
-        donnees.utilisateurs = donnees.utilisateurs.filter(u => u.id !== userId);
-        donnees.emplois = donnees.emplois.filter(e => e.utilisateur_id !== userId);
-        donnees.taches = donnees.taches.filter(t => t.utilisateur_id !== userId);
-        
-        ecrireDonnees(donnees);
-        
-        res.json({
-            success: true,
-            message: '✅ Utilisateur et toutes ses données supprimés avec succès'
-        });
-        
-    } catch (error) {
-        console.error('❌ Erreur suppression utilisateur:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la suppression de l\'utilisateur',
-            error: error.message
-        });
-    }
+router.post('/logout', (req,res) => { clearSession(req,res); res.json({success:true}); });
+router.use(authenticate);
+router.get('/me', (req,res) => {
+  try { const u = read().utilisateurs.find(u=>u.id===req.userId); return u ? res.json({success:true,utilisateur:publicUser(u)}) : res.status(401).json({success:false,message:'Session invalide'}); }
+  catch(err) { return handleError(err,res); }
 });
-
-// ============================================
-// ROUTE : Liste de tous les utilisateurs (admin)
-// ============================================
-router.get('/users', (req, res) => {
-    try {
-        const donnees = lireDonnees();
-        
-        // Version simplifiée des utilisateurs
-        const utilisateurs = donnees.utilisateurs.map(u => ({
-            id: u.id,
-            nom: u.nom,
-            classe: u.classe,
-            date_creation: u.date_creation,
-            nb_cours: donnees.emplois.filter(e => e.utilisateur_id === u.id).length,
-            nb_taches: donnees.taches.filter(t => t.utilisateur_id === u.id).length
-        }));
-        
-        res.json({
-            success: true,
-            total: utilisateurs.length,
-            utilisateurs: utilisateurs
-        });
-        
-    } catch (error) {
-        console.error('❌ Erreur liste utilisateurs:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la récupération de la liste',
-            error: error.message
-        });
-    }
+router.get('/user/:id', (req,res) => {
+  if (!selfId(req.params.id,req,res)) return;
+  try { const u=read().utilisateurs.find(u=>u.id===req.userId); return u ? res.json({success:true,utilisateur:publicUser(u)}) : res.status(404).json({success:false,message:'Utilisateur non trouvé'}); }
+  catch(err) { return handleError(err,res); }
 });
-
-// ============================================
-// ROUTE : Connexion avec email et mot de passe (CORRIGÉE)
-// ============================================
-router.post('/login', (req, res) => {
-    try {
-        const donnees = lireDonnees();
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: '❌ Email et mot de passe requis'
-            });
-        }
-
-        const utilisateur = donnees.utilisateurs.find(u => u.email === email);
-        if (!utilisateur) {
-            return res.status(404).json({
-                success: false,
-                message: '❌ Utilisateur non trouvé'
-            });
-        }
-
-        // ✅ VÉRIFICATION DIRECTE AVEC BCRYPT
-        const isValid = bcrypt.compareSync(password, utilisateur.password);
-
-        if (!isValid) {
-            return res.status(401).json({
-                success: false,
-                message: '❌ Mot de passe incorrect'
-            });
-        }
-
-        // Mettre à jour la dernière connexion
-        utilisateur.derniere_connexion = new Date().toISOString();
-        const userIndex = donnees.utilisateurs.findIndex(u => u.id === utilisateur.id);
-        donnees.utilisateurs[userIndex] = utilisateur;
-        ecrireDonnees(donnees);
-
-        res.json({
-            success: true,
-            message: '✅ Connexion réussie',
-            utilisateur: {
-                id: utilisateur.id,
-                nom: utilisateur.nom,
-                classe: utilisateur.classe,
-                email: utilisateur.email,
-                matieres: utilisateur.matieres || []
-            }
-        });
-
-    } catch (error) {
-        console.error('❌ Erreur connexion:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la connexion',
-            error: error.message
-        });
+router.put('/user/:id', (req,res) => {
+  if (!selfId(req.params.id,req,res)) return;
+  try {
+    const data=read(); const user=data.utilisateurs.find(u=>u.id===req.userId);
+    if (!user) return res.status(404).json({success:false,message:'Utilisateur non trouvé'});
+    if (req.body.nom !== undefined) user.nom=text(req.body.nom,'Nom',100);
+    if (req.body.classe !== undefined) user.classe=text(req.body.classe,'Classe',100);
+    if (req.body.serie !== undefined) user.serie=String(req.body.serie).slice(0,60);
+    if (req.body.preferences !== undefined) {
+      const p=req.body.preferences;
+      if (!p || typeof p!=='object' || Array.isArray(p)) return res.status(400).json({success:false,message:'Préférences invalides'});
+      const next={...user.preferences};
+      if (p.moment_optimal!==undefined) { if (!['matin','apres-midi','soir'].includes(p.moment_optimal)) return res.status(400).json({success:false,message:'Moment optimal invalide'}); next.moment_optimal=p.moment_optimal; }
+      if (p.duree_session!==undefined) next.duree_session=number(p.duree_session,'Durée',20,90);
+      if (p.pauses!==undefined) { if (typeof p.pauses!=='boolean') return res.status(400).json({success:false,message:'Pauses invalides'}); next.pauses=p.pauses; }
+      user.preferences=next;
+      if (p.matieres!==undefined) {
+        if (!Array.isArray(p.matieres) || p.matieres.length>30) return res.status(400).json({success:false,message:'Liste de matières invalide'});
+        user.matieres=p.matieres.map(m=>({nom:text(m.nom,'Matière',100),niveau:['faible','moyen','eleve'].includes(m.niveau)?m.niveau:'moyen',temps: Number.isFinite(Number(m.temps)) ? Math.min(10,Math.max(0.5,Number(m.temps))):2}));
+      }
     }
+    write(data);return res.json({success:true,message:'Utilisateur mis à jour',utilisateur:publicUser(user)});
+  } catch(err) {return handleError(err,res);}
 });
-
-// Exporter le routeur
-module.exports = router;
+router.delete('/user/:id', (req,res) => {
+  if (!selfId(req.params.id,req,res)) return;
+  try { const data=read();data.utilisateurs=data.utilisateurs.filter(u=>u.id!==req.userId);data.emplois=data.emplois.filter(e=>e.utilisateur_id!==req.userId);data.taches=data.taches.filter(t=>t.utilisateur_id!==req.userId);write(data);clearSession(req,res);return res.json({success:true,message:'Compte supprimé'}); }
+  catch(err) {return handleError(err,res);}
+});
+// L'ancien GET /users exposait l'ensemble des utilisateurs. Il a été supprimé.
+module.exports=router;
